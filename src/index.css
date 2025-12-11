@@ -27,6 +27,7 @@
   }
 
   .dark {
+    color-scheme: dark;
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
     --card: 222.2 84% 4.9%;
@@ -116,7 +117,7 @@
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-black/20 dark:bg-white/20 rounded-full hover:bg-black/40 dark:hover:bg-white/40 transition-colors;
+    @apply bg-black/20 dark:bg-white/10 rounded-full hover:bg-black/40 dark:hover:bg-white/20 transition-colors;
   }
 }
 
