@@ -27,7 +27,7 @@ export type CardStyle = {
   backgroundColor: string;
   textColor: string;
   accentColor: string;
-  aspectRatio: '1:1' | '4:3' | '16:9' | 'custom';
+  aspectRatio: '1:1' | '4:3' | '3:2' | '16:9' | 'custom';
   orientation: 'portrait' | 'landscape';
   width: number;
   height: number;

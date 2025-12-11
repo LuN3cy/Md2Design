@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Edit3, Bold, Italic, List, Quote, Heading1, Heading2, Link, Image as ImageIcon } from 'lucide-react';
 
 export const Editor = () => {
-  const { markdown, setMarkdown, addCardImage, activeCardIndex } = useStore();
+  const { markdown, setMarkdown, addCardImage } = useStore();
   const t = useTranslation();
   const [isOpen, setIsOpen] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);

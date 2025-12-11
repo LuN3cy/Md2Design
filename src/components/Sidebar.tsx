@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useStore } from '../store';
 import { useTranslation } from '../i18n';
 import type { CardStyle } from '../store';
-import { Palette, Type, Layout, Monitor, ChevronRight, ChevronLeft, Smartphone, Monitor as MonitorIcon, Square, Plus, Image as ImageIcon } from 'lucide-react';
+import { Palette, Type, Layout, Monitor, ChevronRight, ChevronLeft, Smartphone, Monitor as MonitorIcon, Plus, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const Sidebar = () => {
