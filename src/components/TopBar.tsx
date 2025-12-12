@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../store';
 import { useTranslation } from '../i18n';
-import { Moon, Sun, Download, Languages, Info, X, ChevronDown } from 'lucide-react';
+import { Moon, Sun, Download, Languages, Info, X, ChevronDown, Check } from 'lucide-react';
 import { toPng, toJpeg } from 'html-to-image';
 import { motion, AnimatePresence } from 'framer-motion';
 import JSZip from 'jszip';
@@ -22,6 +22,8 @@ export const TopBar = () => {
   const [fileNamePrefix, setFileNamePrefix] = useState('card');
   const [folderName, setFolderName] = useState('cards-export'); // New Folder Name state
   const [isExporting, setIsExporting] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [previewSize, setPreviewSize] = useState<{ single: string, total: string }>({ single: '-', total: '-' });
 
   // Calculate size estimation
@@ -71,41 +73,49 @@ export const TopBar = () => {
 
   const handleExport = async () => {
     setIsExporting(true);
+    setProgress(0);
     try {
         const cards = Array.from(document.querySelectorAll('[id^="card-"]')) as HTMLElement[];
         const options = { 
             pixelRatio: scale,
             filter: (node: any) => !node.classList?.contains('export-ignore')
         };
+        
+        let completed = 0;
+        const total = cards.length;
+        const updateProgress = () => {
+            completed++;
+            setProgress(Math.round((completed / total) * 100));
+        };
+
+        // Helper to generate blob
+        const generateBlob = async (card: HTMLElement) => {
+            let dataUrl;
+            if (format === 'png') {
+                dataUrl = await toPng(card, options);
+            } else {
+                dataUrl = await toJpeg(card, { ...options, quality: 0.9 });
+            }
+            const res = await fetch(dataUrl);
+            return await res.blob();
+        };
 
         if (exportMode === 'multiple') {
-            // Check for File System Access API support
+            // Folder Export (File System Access API)
             if ('showDirectoryPicker' in window) {
                 try {
-                    // @ts-ignore - TS might not know about showDirectoryPicker yet
+                    // @ts-ignore
                     const dirHandle = await window.showDirectoryPicker();
-                    
-                    // Create sub-directory if user provided a name
                     let targetHandle = dirHandle;
                     if (folderName) {
                         // @ts-ignore
                         targetHandle = await dirHandle.getDirectoryHandle(folderName, { create: true });
                     }
-                    
-                    for (let i = 0; i < cards.length; i++) {
-                        const card = cards[i];
-                        let dataUrl;
-                        if (format === 'png') {
-                            dataUrl = await toPng(card, options);
-                        } else {
-                            dataUrl = await toJpeg(card, { ...options, quality: 0.9 });
-                        }
-                        
-                        // Convert DataURL to Blob
-                        const res = await fetch(dataUrl);
-                        const blob = await res.blob();
-                        
-                        // Create file in directory
+
+                    // Process with concurrency limit
+                    const CONCURRENCY = 3;
+                    const tasks = cards.map((card, i) => async () => {
+                        const blob = await generateBlob(card);
                         const fileName = `${fileNamePrefix}-${i + 1}.${format}`;
                         // @ts-ignore
                         const fileHandle = await targetHandle.getFileHandle(fileName, { create: true });
@@ -113,101 +123,83 @@ export const TopBar = () => {
                         const writable = await fileHandle.createWritable();
                         await writable.write(blob);
                         await writable.close();
+                        updateProgress();
+                    });
+
+                    // Run tasks
+                    const running: Promise<void>[] = [];
+                    for (const task of tasks) {
+                        const p = task().then(() => {
+                            running.splice(running.indexOf(p), 1);
+                        });
+                        running.push(p);
+                        if (running.length >= CONCURRENCY) {
+                            await Promise.race(running);
+                        }
                     }
-                    // Success!
+                    await Promise.all(running);
                 } catch (err) {
-                    // User cancelled or error, fallback to ZIP?
-                    // Actually if user cancelled picking directory, we should probably stop.
-                    // But if it's an error, maybe fallback.
-                    // For now, let's just log and maybe fallback if it wasn't a cancellation.
-                    if ((err as Error).name !== 'AbortError') {
+                     if ((err as Error).name !== 'AbortError') {
                         console.error('Directory picker failed, falling back to ZIP', err);
                         // Fallback logic (ZIP)
                         const zip = new JSZip();
-                        for (let i = 0; i < cards.length; i++) {
-                            const card = cards[i];
-                            let dataUrl;
-                            if (format === 'png') {
-                                dataUrl = await toPng(card, options);
-                            } else {
-                                dataUrl = await toJpeg(card, { ...options, quality: 0.9 });
-                            }
-                            const base64Data = dataUrl.split(',')[1];
-                            zip.file(`${fileNamePrefix}-${i + 1}.${format}`, base64Data, { base64: true });
+                        // Batch processing for ZIP to avoid UI freeze
+                        const chunkSize = 3;
+                        for (let i = 0; i < cards.length; i += chunkSize) {
+                            const chunk = cards.slice(i, i + chunkSize);
+                            await Promise.all(chunk.map(async (card, idx) => {
+                                const globalIdx = i + idx;
+                                const blob = await generateBlob(card);
+                                zip.file(`${fileNamePrefix}-${globalIdx + 1}.${format}`, blob);
+                                updateProgress();
+                            }));
                         }
                         const content = await zip.generateAsync({ type: "blob" });
                         saveAs(content, `${fileNamePrefix}-cards.zip`);
+                    } else {
+                        // User cancelled
+                        setIsExporting(false);
+                        return;
                     }
                 }
             } else {
-                // Fallback for browsers without File System Access API
+                // Fallback for browsers without FS API (ZIP)
                 const zip = new JSZip();
-                
-                for (let i = 0; i < cards.length; i++) {
-                    const card = cards[i];
-                    let dataUrl;
-                    if (format === 'png') {
-                        dataUrl = await toPng(card, options);
-                    } else {
-                        dataUrl = await toJpeg(card, { ...options, quality: 0.9 });
-                    }
-                    
-                    // Remove prefix from data URL
-                    const base64Data = dataUrl.split(',')[1];
-                    zip.file(`${fileNamePrefix}-${i + 1}.${format}`, base64Data, { base64: true });
+                const chunkSize = 3;
+                for (let i = 0; i < cards.length; i += chunkSize) {
+                    const chunk = cards.slice(i, i + chunkSize);
+                    await Promise.all(chunk.map(async (card, idx) => {
+                        const globalIdx = i + idx;
+                        const blob = await generateBlob(card);
+                        zip.file(`${fileNamePrefix}-${globalIdx + 1}.${format}`, blob);
+                        updateProgress();
+                    }));
                 }
-                
                 const content = await zip.generateAsync({ type: "blob" });
                 saveAs(content, `${fileNamePrefix}-cards.zip`);
             }
-            
         } else {
-            // Single File (Continuous)
-            // Create a canvas to stitch images
-            // We need to generate all images first to know dimensions
-            const images = await Promise.all(cards.map(async (card) => {
-                const dataUrl = await toPng(card, options);
-                const img = new Image();
-                img.src = dataUrl;
-                await new Promise(resolve => img.onload = resolve);
-                return img;
-            }));
-
-            if (images.length === 0) return;
-
-            const totalHeight = images.reduce((acc, img) => acc + img.height, 0);
-            const maxWidth = Math.max(...images.map(img => img.width));
-            
-            const canvas = document.createElement('canvas');
-            canvas.width = maxWidth;
-            canvas.height = totalHeight;
-            const ctx = canvas.getContext('2d');
-            
-            if (ctx) {
-                // Fill background if JPG
-                if (format === 'jpg') {
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                }
-
-                let currentY = 0;
-                images.forEach(img => {
-                    // Center image if smaller than max width
-                    const x = (maxWidth - img.width) / 2;
-                    ctx.drawImage(img, x, currentY);
-                    currentY += img.height;
-                });
-                
-                canvas.toBlob((blob) => {
-                    if (blob) saveAs(blob, `${fileNamePrefix}-continuous.${format}`);
-                }, format === 'png' ? 'image/png' : 'image/jpeg', 0.9);
+            // Direct Download (Single Images)
+            // Process sequentially with small delay to prevent browser blocking
+            for (let i = 0; i < cards.length; i++) {
+                const card = cards[i];
+                const blob = await generateBlob(card);
+                saveAs(blob, `${fileNamePrefix}-${i + 1}.${format}`);
+                updateProgress();
+                // Small delay to prevent browser from blocking multiple downloads
+                await new Promise(resolve => setTimeout(resolve, 200));
             }
         }
+
+        // Show success
+        setShowExport(false);
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 3000);
+
     } catch (err) {
         console.error('Export failed', err);
     } finally {
         setIsExporting(false);
-        setShowExport(false);
     }
   };
 
@@ -362,8 +354,8 @@ export const TopBar = () => {
                      <label className="text-xs font-medium text-slate-500 dark:text-white/50 mb-2 block uppercase tracking-wider">{t.exportMode}</label>
                      <div className="flex flex-col gap-2">
                        {[
-                         { value: 'multiple', label: t.multipleFiles, desc: 'Folder with separate images' },
-                         { value: 'single', label: t.singleFile, desc: 'All cards stitched vertically' }
+                         { value: 'multiple', label: t.multipleFiles, desc: 'Save to folder' },
+                         { value: 'single', label: t.singleFile, desc: 'Download individually' }
                        ].map((mode) => (
                          <button
                            key={mode.value}
@@ -378,6 +370,7 @@ export const TopBar = () => {
                              <div className={`text-sm font-medium ${exportMode === mode.value ? 'text-blue-500 dark:text-blue-400' : 'text-slate-700 dark:text-white/80'}`}>
                                {mode.label}
                              </div>
+                             <div className="text-xs opacity-50 mt-0.5">{mode.desc}</div>
                            </div>
                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
                              exportMode === mode.value ? 'border-blue-500' : 'border-black/20 dark:border-white/20 group-hover:border-black/40 dark:group-hover:border-white/40'
@@ -433,25 +426,64 @@ export const TopBar = () => {
                    </div>
 
                    {/* Action Button */}
-                   <button
-                     onClick={handleExport}
-                     disabled={isExporting}
-                     className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-xl text-sm font-bold shadow-xl shadow-blue-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transform active:scale-[0.98]"
-                   >
-                     {isExporting ? (
-                       <>
-                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                         {t.calculating}
-                       </>
-                     ) : (
-                       <>
-                         {t.exportBtn}
-                         <ChevronDown size={16} className="-rotate-90 opacity-60" />
-                       </>
+                   <div className="space-y-3">
+                     {isExporting && (
+                       <div className="w-full bg-black/5 dark:bg-white/5 rounded-full h-1.5 overflow-hidden">
+                         <motion.div 
+                           className="h-full bg-blue-500 rounded-full"
+                           initial={{ width: 0 }}
+                           animate={{ width: `${progress}%` }}
+                           transition={{ duration: 0.2 }}
+                         />
+                       </div>
                      )}
-                   </button>
+                     
+                     <button
+                       onClick={handleExport}
+                       disabled={isExporting}
+                       className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-xl text-sm font-bold shadow-xl shadow-blue-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transform active:scale-[0.98]"
+                     >
+                       {isExporting ? (
+                         <>
+                           <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                           {t.calculating} ({progress}%)
+                         </>
+                       ) : (
+                         <>
+                           {t.exportBtn}
+                           <ChevronDown size={16} className="-rotate-90 opacity-60" />
+                         </>
+                       )}
+                     </button>
+                   </div>
                  </div>
                </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showSuccess && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] flex items-center justify-center pointer-events-none"
+          >
+            <motion.div
+              initial={{ scale: 0.8, y: 20, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.8, y: 20, opacity: 0 }}
+              className="bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/10 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 pointer-events-auto"
+            >
+              <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-500">
+                <Check size={20} strokeWidth={3} />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">{t.exportSuccess}</h3>
+                <p className="text-xs text-slate-500 dark:text-white/60">{t.exportSuccessMsg}</p>
+              </div>
             </motion.div>
           </motion.div>
         )}
