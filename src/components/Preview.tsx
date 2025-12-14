@@ -12,25 +12,32 @@ export const Preview = () => {
   
   // Handle scroll for TopBar blur effect and active card detection
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      if (scrollRef.current) {
-        setIsScrolled(scrollRef.current.scrollTop > 20);
-        
-        // Find center card
-        const cards = document.querySelectorAll('[id^="card-"]');
-        let closestCardIndex = 0;
-        let minDistance = Infinity;
-        const center = window.innerHeight / 2;
-
-        cards.forEach((card, index) => {
-          const rect = card.getBoundingClientRect();
-          const distance = Math.abs(rect.top + rect.height / 2 - center);
-          if (distance < minDistance) {
-            minDistance = distance;
-            closestCardIndex = index;
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          if (scrollRef.current) {
+            setIsScrolled(scrollRef.current.scrollTop > 20);
+            
+            // Find center card
+            const cards = document.querySelectorAll('[id^="card-"]');
+            let closestCardIndex = 0;
+            let minDistance = Infinity;
+            const center = window.innerHeight / 2;
+    
+            cards.forEach((card, index) => {
+              const rect = card.getBoundingClientRect();
+              const distance = Math.abs(rect.top + rect.height / 2 - center);
+              if (distance < minDistance) {
+                minDistance = distance;
+                closestCardIndex = index;
+              }
+            });
+            setActiveCardIndex(closestCardIndex);
           }
+          ticking = false;
         });
-        setActiveCardIndex(closestCardIndex);
+        ticking = true;
       }
     };
 

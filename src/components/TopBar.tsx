@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../store';
 import { useTranslation } from '../i18n';
-import { Moon, Sun, Download, Languages, Info, X, ChevronDown, Check } from 'lucide-react';
+import { Moon, Sun, Download, Languages, Info, X, ChevronDown, Check, Github } from 'lucide-react';
 import { toPng, toJpeg } from 'html-to-image';
 import { motion, AnimatePresence } from 'framer-motion';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
-import { Github } from 'lucide-react';
+import logoSvg from '../assets/logo.svg';
 
 export const TopBar = () => {
   const { theme, toggleTheme, toggleLanguage, isScrolled } = useStore();
@@ -229,6 +229,7 @@ export const TopBar = () => {
       <div className={`h-14 w-full flex items-center justify-between px-6 shrink-0 z-50 fixed top-0 left-0 transition-all duration-300 ${isScrolled ? 'glass-bar' : 'bg-transparent'}`}>
         <div className="flex items-center gap-4">
           <div className="font-bold text-lg tracking-tight flex items-center gap-2">
+             <img src={logoSvg} alt="Logo" className="w-6 h-6" />
              <span className="opacity-90">{t.title}</span>
           </div>
         </div>

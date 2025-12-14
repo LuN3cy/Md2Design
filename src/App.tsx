@@ -85,11 +85,6 @@ function App() {
 
     styleEl.textContent = css;
     
-    // Force re-render of elements using these fonts by toggling a class or similar if needed,
-    // but usually updating the style tag is enough. 
-    // However, to be safe, we can log to ensure it's updating.
-    console.log('Updated custom fonts:', cardStyle.customFonts.map(f => f.name));
-    
   }, [cardStyle.customFonts]);
 
   return (
