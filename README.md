@@ -1,4 +1,5 @@
 <div align="center">
+  <img src="src/assets/logo.svg" width="120" height="120" alt="Md2Design Logo" />
   <h1>Md2Design</h1>
   <p>从 Markdown 到精美卡片的所见即所得工具 · A well-designed card generator from Markdown</p>
   <p>
