@@ -278,10 +278,42 @@ export const TopBar = () => {
           
           <button
             onClick={() => setShowChangelog(true)}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-blue-500/10 to-purple-500/10 hover:from-blue-500/20 hover:to-purple-500/20 border border-blue-500/10 hover:border-blue-500/20 text-blue-600 dark:text-blue-400 rounded-full text-xs font-bold transition-all ml-2"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-white/80 dark:bg-white/10 hover:bg-white dark:hover:bg-white/20 text-blue-600 dark:text-blue-400 rounded-full text-xs font-bold transition-all ml-2 relative group"
           >
-            <Sparkles size={12} />
-            <span>{t.changelogTitle}</span>
+            {/* Outer soft glow (Diffuse) */}
+            <motion.div 
+              className="absolute inset-0 rounded-full bg-blue-500/20 blur-md -z-20 pointer-events-none"
+              animate={{ 
+                opacity: [0.4, 0.8, 0.4],
+                scale: [1, 1.15, 1]
+              }}
+              transition={{ 
+                duration: 3, 
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+            
+            {/* Inner precise glow (Border-like) */}
+            <motion.div 
+              className="absolute inset-0 rounded-full border border-blue-500/50 shadow-[0_0_8px_rgba(59,130,246,0.4)] -z-10 pointer-events-none"
+              animate={{ 
+                opacity: [0.5, 1, 0.5],
+                boxShadow: [
+                  "0 0 2px rgba(59,130,246,0.2)",
+                  "0 0 10px rgba(59,130,246,0.5)",
+                  "0 0 2px rgba(59,130,246,0.2)"
+                ]
+              }}
+              transition={{ 
+                duration: 3, 
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+            
+            <Sparkles size={12} className="relative z-10 group-hover:animate-spin-slow" />
+            <span className="relative z-10">{t.changelogTitle}</span>
           </button>
         </div>
 

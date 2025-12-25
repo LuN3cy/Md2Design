@@ -115,15 +115,30 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 10 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-4xl h-[80vh] overflow-hidden rounded-3xl shadow-2xl border border-white/20 dark:border-white/10 flex flex-col md:flex-row"
+            className="relative w-full max-w-4xl h-[80vh] overflow-hidden rounded-3xl shadow-2xl flex flex-col md:flex-row"
             style={{
-              background: 'rgba(255, 255, 255, 0.85)',
-              backdropFilter: 'blur(30px) saturate(180%)',
-              WebkitBackdropFilter: 'blur(30px) saturate(180%)',
+              background: 'rgba(255, 255, 255, 0.4)',
+              backdropFilter: 'blur(40px) saturate(180%)',
+              WebkitBackdropFilter: 'blur(40px) saturate(180%)',
             }}
           >
-             {/* Dark mode override for background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-white/10 dark:from-black/80 dark:to-black/90 -z-10" />
+            {/* Diffuse Gradient Background (Blobs) */}
+            <div className="absolute inset-0 overflow-hidden -z-20 pointer-events-none opacity-50 dark:opacity-40">
+              <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-400/30 dark:bg-blue-600/20 rounded-full blur-[100px] animate-pulse" />
+              <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-400/30 dark:bg-purple-600/20 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '1s' }} />
+              <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-pink-400/20 dark:bg-pink-600/10 rounded-full blur-[80px] animate-pulse" style={{ animationDelay: '2s' }} />
+            </div>
+
+            {/* Noise Layer to prevent color banding (sRGB) */}
+            <div 
+              className="absolute inset-0 -z-10 pointer-events-none opacity-[0.03] dark:opacity-[0.05] mix-blend-overlay"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`
+              }}
+            />
+            
+            {/* Dark mode override for background */}
+            <div className="absolute inset-0 bg-white/20 dark:bg-black/60 -z-10" />
             
             {/* Left Sidebar: Version List */}
             <div className="w-full md:w-64 flex-shrink-0 bg-black/5 dark:bg-white/5 border-b md:border-b-0 md:border-r border-black/5 dark:border-white/5 flex flex-col">
@@ -231,10 +246,16 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
                          )}
 
                          {currentUpdate.demo === 'bg-layout' && (
-                           <div className="bg-slate-100 dark:bg-[#0a0a0a] rounded-2xl p-8 border border-black/5 dark:border-white/5 shadow-inner flex flex-col md:flex-row items-center gap-8 justify-center min-h-[200px]">
+                           <div className="bg-slate-100 dark:bg-[#0a0a0a] rounded-2xl p-8 border border-black/5 dark:border-white/5 shadow-inner flex flex-col items-center gap-12 justify-center min-h-[200px]">
+                              <div className="flex flex-col md:flex-row items-center justify-center gap-12 w-full max-w-3xl">
+                                 <DemoOldLayout />
+                                 <div className="hidden md:block w-px h-32 bg-black/10 dark:bg-white/10 relative">
+                                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-100 dark:bg-[#0a0a0a] px-2 py-1 rounded text-[10px] font-bold text-slate-400 uppercase tracking-wider">VS</div>
+                                 </div>
+                                 <DemoLayoutOpt />
+                              </div>
+                              <div className="w-full max-w-3xl h-px bg-black/5 dark:bg-white/5" />
                               <DemoBgImage />
-                              <div className="h-px w-full md:w-px md:h-24 bg-black/10 dark:bg-white/10" />
-                              <DemoLayoutOpt />
                            </div>
                          )}
                       </div>
@@ -426,17 +447,72 @@ const DemoBgImage = () => {
             <div className="absolute inset-0 bg-black/10" />
          </motion.div>
          
-         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-slate-400">
-            <ImageIcon size={24} />
-            <span className="text-[10px] font-medium opacity-60">
-              {language === 'zh' ? '背景展示区域' : 'Background Area'}
-            </span>
+         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-slate-400 z-20 pointer-events-none">
+            {/* Mock Card Content */}
+            <motion.div 
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="w-32 h-20 bg-white/80 dark:bg-black/60 backdrop-blur-md rounded-lg shadow-xl border border-white/20 p-3 flex flex-col gap-1.5"
+            >
+              <div className="w-8 h-1 bg-blue-500 rounded-full" />
+              <div className="space-y-1">
+                <div className="w-full h-1 bg-black/10 dark:bg-white/10 rounded-full" />
+                <div className="w-4/5 h-1 bg-black/10 dark:bg-white/10 rounded-full" />
+                <div className="w-3/5 h-1 bg-black/10 dark:bg-white/10 rounded-full" />
+              </div>
+              <div className="mt-auto flex justify-between items-center">
+                <div className="w-4 h-4 rounded-full bg-black/5 dark:bg-white/5" />
+                <div className="text-[6px] font-bold opacity-30 uppercase tracking-tighter">Md2Card</div>
+              </div>
+            </motion.div>
+            
+            <div className="flex flex-col items-center mt-2">
+               <ImageIcon size={16} className="opacity-40" />
+               <span className="text-[8px] font-bold uppercase tracking-widest opacity-30 mt-1">
+                 {language === 'zh' ? '自定义预览' : 'Preview'}
+               </span>
+            </div>
          </div>
       </div>
       
       <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400">
          <CheckCircle2 size={12} className="text-green-500" />
          <span>{language === 'zh' ? '支持动态调整' : 'Supports continuous adjustment'}</span>
+       </div>
+    </div>
+  );
+};
+
+const DemoOldLayout = () => {
+  const { language } = useStore();
+  const [val, setVal] = useState(50);
+
+  return (
+    <div className="w-full max-w-xs space-y-4">
+       <div className="bg-white/50 dark:bg-white/5 p-4 rounded-xl border border-black/5 dark:border-white/5 opacity-60">
+          <div className="text-[10px] font-bold text-slate-400 uppercase mb-4 text-center">
+            {language === 'zh' ? '旧版布局 (v1.2.0)' : 'Old Layout (v1.2.0)'}
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-[10px] font-medium opacity-50 block">
+              {language === 'zh' ? '参数设置' : 'Parameter Setting'}
+            </label>
+            <div className="flex items-center gap-3">
+              <input 
+                type="range" 
+                min={0} 
+                max={100} 
+                value={val}
+                onChange={(e) => setVal(parseInt(e.target.value))}
+                className="flex-1 accent-slate-400 h-1 bg-black/10 dark:bg-white/10 rounded-lg appearance-none cursor-pointer"
+              />
+              <span className="text-xs font-mono opacity-40 w-8">{val}</span>
+            </div>
+            <p className="text-[9px] text-red-400/60 leading-tight">
+              {language === 'zh' ? '* 旧版参数显示在进度条右侧，容易被遮挡' : '* Parameters displayed next to slider, easily obscured'}
+            </p>
+          </div>
        </div>
     </div>
   );
