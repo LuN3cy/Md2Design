@@ -84,6 +84,7 @@ const translations = {
     styleResetToast: 'Style Reset',
     settingsRestoredToast: 'Settings restored to initial state',
     undo: 'Undo',
+    changelogTitle: 'Updates',
   },
   zh: {
     title: 'Md2Design',
@@ -168,6 +169,7 @@ const translations = {
     styleResetToast: '样式已重置',
     settingsRestoredToast: '设置已恢复到初始状态',
     undo: '撤回',
+    changelogTitle: '更新日志',
   }
 };
 

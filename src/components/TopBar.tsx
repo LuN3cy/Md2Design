@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../store';
 import { useTranslation } from '../i18n';
-import { Moon, Sun, Download, Languages, Info, X, ChevronDown, Check, Github } from 'lucide-react';
+import { Moon, Sun, Download, Languages, Info, X, ChevronDown, Check, Github, Sparkles } from 'lucide-react';
 import { toPng, toJpeg } from 'html-to-image';
 import { motion, AnimatePresence } from 'framer-motion';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import { ChangelogModal } from './ChangelogModal';
 
 import logoSvg from '../assets/logo.svg';
 
@@ -14,6 +15,7 @@ export const TopBar = () => {
   const t = useTranslation();
   const [showContact, setShowContact] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [showChangelog, setShowChangelog] = useState(false);
 
   // Export Settings
   const [format, setFormat] = useState<'png' | 'jpg'>('png');
@@ -273,6 +275,14 @@ export const TopBar = () => {
              <img src={logoSvg} alt="Logo" className="w-6 h-6" />
              <span className="opacity-90">{t.title}</span>
           </div>
+          
+          <button
+            onClick={() => setShowChangelog(true)}
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-blue-500/10 to-purple-500/10 hover:from-blue-500/20 hover:to-purple-500/20 border border-blue-500/10 hover:border-blue-500/20 text-blue-600 dark:text-blue-400 rounded-full text-xs font-bold transition-all ml-2"
+          >
+            <Sparkles size={12} />
+            <span>{t.changelogTitle}</span>
+          </button>
         </div>
 
         <div className="flex items-center gap-3">
@@ -320,6 +330,8 @@ export const TopBar = () => {
       </div>
 
       {/* Export Modal */}
+      <ChangelogModal isOpen={showChangelog} onClose={() => setShowChangelog(false)} />
+      
       <AnimatePresence>
         {showExport && (
           <motion.div
