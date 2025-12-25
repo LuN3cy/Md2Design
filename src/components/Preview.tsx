@@ -3,6 +3,7 @@ import type { MouseEvent as ReactMouseEvent } from 'react';
 import { useStore } from '../store';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
 import { motion } from 'framer-motion';
 import { Rnd } from 'react-rnd';
 import { Trash2, Move } from 'lucide-react';
@@ -279,7 +280,7 @@ const Card = ({ content, index }: { content: string, index: number }) => {
         <div className="relative z-10 h-full flex flex-col pointer-events-none">
           <div className="prose prose-sm max-w-none flex-1 pointer-events-auto p-8 overflow-hidden">
             <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
+              remarkPlugins={[remarkGfm, remarkBreaks]}
               components={{
                   h1: ({...props}) => (
                     <div className="flex flex-col items-center mb-8 first:mt-0 mt-8">

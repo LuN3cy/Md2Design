@@ -24,6 +24,7 @@
     "react-dom": "^19.2.0",
     "react-markdown": "^10.1.0",
     "react-rnd": "^10.5.2",
+    "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3.4.0",
     "turndown": "^7.2.2",
