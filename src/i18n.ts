@@ -85,6 +85,14 @@ const translations = {
     settingsRestoredToast: 'Settings restored to initial state',
     undo: 'Undo',
     changelogTitle: 'Updates',
+    presets: 'Presets',
+    savePreset: 'Save Preset',
+    presetName: 'Preset Name',
+    apply: 'Apply',
+    delete: 'Delete',
+    noPresets: 'No presets saved',
+    saveCurrent: 'Save Current Style',
+    enterPresetName: 'Enter preset name...',
   },
   zh: {
     title: 'Md2Design',
@@ -170,6 +178,14 @@ const translations = {
     settingsRestoredToast: '设置已恢复到初始状态',
     undo: '撤回',
     changelogTitle: '更新日志',
+    presets: '样式预设',
+    savePreset: '保存预设',
+    presetName: '预设名称',
+    apply: '应用',
+    delete: '删除',
+    noPresets: '暂无保存的预设',
+    saveCurrent: '保存当前样式',
+    enterPresetName: '输入预设名称...',
   }
 };
 

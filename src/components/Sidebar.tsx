@@ -1,11 +1,553 @@
-import { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { useStore } from '../store';
+import { useStore, PRESET_GRADIENTS } from '../store';
 import { useTranslation } from '../i18n';
-import type { CardStyle } from '../store';
-import { Palette, Type, Layout, Monitor, ChevronRight, ChevronLeft, Smartphone, Monitor as MonitorIcon, Plus, Image as ImageIcon, RotateCcw, Stamp, Upload } from 'lucide-react';
+import type { CardStyle, StylePreset } from '../store';
+import { Palette, Type, Layout, Monitor, ChevronRight, ChevronLeft, Smartphone, Monitor as MonitorIcon, Plus, Image as ImageIcon, RotateCcw, Stamp, Upload, Trash2, LayoutPanelTop, Maximize2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HexColorPicker } from 'react-colorful';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
+
+const GradientPresets = ({ onSelect }: { onSelect: (start: string, end: string) => void }) => {
+  return (
+    <div className="grid grid-cols-4 gap-2 mt-2">
+      {PRESET_GRADIENTS.map((g, i) => (
+        <button
+          key={i}
+          onClick={() => onSelect(g.start, g.end)}
+          className="w-full aspect-square rounded-md border border-black/10 dark:border-white/10 transition-transform active:scale-95 hover:scale-105"
+          style={{ background: `linear-gradient(135deg, ${g.start} 0%, ${g.end} 100%)` }}
+          title={g.name}
+        />
+      ))}
+    </div>
+  );
+};
+
+const PresetsManager = () => {
+  const { presets, savePreset, deletePreset, applyPreset, markdown } = useStore();
+  const t = useTranslation();
+  const [isSaving, setIsSaving] = useState(false);
+  const [presetName, setPresetName] = useState('');
+  const [previewPreset, setPreviewPreset] = useState<StylePreset | null>(null);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
+  const [previewScale, setPreviewScale] = useState(1);
+
+  const handleSave = () => {
+    if (presetName.trim()) {
+      savePreset(presetName.trim());
+      setPresetName('');
+      setIsSaving(false);
+    }
+  };
+
+  const pageContent = markdown.split(/\n---\n/).filter(page => page.trim() !== '')[0] ?? '';
+
+  const getPreviewDimensions = (style: CardStyle) => {
+    const baseSize = 500;
+    let width = style.width || 800;
+    let height = style.height || 600;
+
+    if (style.aspectRatio !== 'custom') {
+      const [w, h] = style.aspectRatio.split(':').map(Number);
+
+      if (style.orientation === 'portrait') {
+        width = baseSize;
+        height = width * (h / w);
+        if (w > h) {
+          height = width * (w / h);
+        } else {
+          height = width * (h / w);
+        }
+      } else {
+        width = baseSize;
+        if (w > h) {
+          height = width * (h / w);
+        } else {
+          height = width * (h / w);
+        }
+      }
+
+      let ratio = w / h;
+      if (style.orientation === 'portrait') {
+        if (ratio > 1) ratio = 1 / ratio;
+      } else {
+        if (ratio < 1) ratio = 1 / ratio;
+      }
+
+      width = baseSize;
+      height = baseSize / ratio;
+    }
+
+    return { width, height };
+  };
+
+  useEffect(() => {
+    if (!previewPreset) return;
+
+    const el = previewContainerRef.current;
+    if (!el) return;
+
+    const { width, height } = getPreviewDimensions(previewPreset.style);
+
+    const recompute = () => {
+      const computed = window.getComputedStyle(el);
+      const padX = parseFloat(computed.paddingLeft) + parseFloat(computed.paddingRight);
+      const padY = parseFloat(computed.paddingTop) + parseFloat(computed.paddingBottom);
+      const availableW = Math.max(0, el.clientWidth - padX);
+      const availableH = Math.max(0, el.clientHeight - padY);
+      if (!availableW || !availableH) return;
+
+      const nextScale = Math.min(availableW / width, availableH / height, 1);
+      setPreviewScale(nextScale);
+    };
+
+    recompute();
+
+    const ro = new ResizeObserver(() => recompute());
+    ro.observe(el);
+    window.addEventListener('resize', recompute);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', recompute);
+    };
+  }, [previewPreset]);
+
+  return (
+    <div className="space-y-4 mb-8">
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {previewPreset && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[1000] bg-black/35"
+              onClick={() => setPreviewPreset(null)}
+              style={{
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)'
+              }}
+            >
+              <motion.div
+                initial={{ scale: 0.96, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.96, opacity: 0, y: 20 }}
+                className="absolute inset-6 sm:inset-10 rounded-3xl overflow-hidden shadow-2xl border border-white/20 bg-white/40 dark:bg-[#0a0a0a]/35 backdrop-blur-2xl flex flex-col max-w-4xl max-h-[80vh] mx-auto my-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="p-4 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-white/70 dark:bg-black/40 backdrop-blur-md">
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold truncate">{previewPreset.name}</div>
+                    <div className="text-[10px] opacity-50 truncate">{t.presets}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        applyPreset(previewPreset.style);
+                        setPreviewPreset(null);
+                      }}
+                      className="px-4 py-1.5 bg-blue-500 text-white rounded-full text-xs font-bold hover:bg-blue-600 transition-colors"
+                    >
+                      {t.apply}
+                    </button>
+                    <button
+                      onClick={() => setPreviewPreset(null)}
+                      className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors"
+                      aria-label="Close"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                </div>
+
+                <div ref={previewContainerRef} className="relative flex-1 overflow-hidden flex items-center justify-center p-4 sm:p-8">
+                  <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute inset-0 bg-white/10 dark:bg-white/5 backdrop-blur-2xl" />
+                    <div className="absolute -top-24 -left-24 w-80 h-80 rounded-full bg-cyan-400/25 blur-3xl" />
+                    <div className="absolute -bottom-28 -right-28 w-96 h-96 rounded-full bg-blue-500/25 blur-3xl" />
+                    <div className="absolute inset-0 opacity-[0.04] mix-blend-overlay"
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`
+                      }}
+                    />
+                  </div>
+                  <div
+                    className="relative z-10"
+                    style={{
+                      transform: `scale(${previewScale})`,
+                      transformOrigin: 'center'
+                    }}
+                  >
+                    <PresetCard content={pageContent} index={0} style={previewPreset.style} getPreviewDimensions={getPreviewDimensions} />
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
+
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold opacity-80 flex items-center gap-2">
+           <LayoutPanelTop size={16} /> {t.presets}
+        </h2>
+        <button 
+          onClick={() => setIsSaving(!isSaving)}
+          className="p-1.5 hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors text-blue-500"
+          title={t.savePreset}
+        >
+          <Plus size={18} />
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {isSaving && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="p-3 bg-black/5 dark:bg-white/5 rounded-lg border border-blue-500/30 space-y-3 mb-4">
+              <input 
+                autoFocus
+                type="text" 
+                placeholder={t.enterPresetName}
+                value={presetName}
+                onChange={(e) => setPresetName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+                className="w-full bg-white dark:bg-black/20 border border-black/10 dark:border-white/10 rounded px-3 py-2 text-xs focus:outline-none focus:border-blue-500"
+              />
+              <div className="flex gap-2">
+                <button 
+                  onClick={handleSave}
+                  disabled={!presetName.trim()}
+                  className="flex-1 bg-blue-500 text-white py-1.5 rounded text-xs font-bold disabled:opacity-50"
+                >
+                  {t.add}
+                </button>
+                <button 
+                  onClick={() => setIsSaving(false)}
+                  className="px-3 py-1.5 bg-black/5 dark:bg-white/5 rounded text-xs"
+                >
+                  {t.undo}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="grid grid-cols-3 gap-2 justify-items-center">
+        {presets.map((preset) => (
+          <div 
+            key={preset.id}
+            className="group relative bg-black/5 dark:bg-white/5 rounded-lg border border-black/5 dark:border-white/5 overflow-hidden transition-all hover:border-blue-500/50 w-full max-w-[72px]"
+          >
+            <div 
+              className="aspect-square w-full cursor-pointer overflow-hidden relative"
+              onClick={() => applyPreset(preset.style)}
+            >
+              <div 
+                className="w-full h-full transition-transform group-hover:scale-110"
+                style={{ 
+                  background: preset.style.enableBackground 
+                    ? (preset.style.backgroundType === 'gradient' ? preset.style.backgroundValue : (preset.style.backgroundType === 'solid' ? preset.style.backgroundValue : '#000'))
+                    : (preset.style.cardBackgroundType === 'gradient' ? preset.style.cardGradientValue : preset.style.backgroundColor)
+                }}
+              >
+                <div className="absolute inset-0 flex items-center justify-center p-2">
+                  <div 
+                    className="w-full h-full rounded-[2px] shadow-sm border border-black/5"
+                    style={{ 
+                      background: preset.style.cardBackgroundType === 'gradient' ? preset.style.cardGradientValue : preset.style.backgroundColor,
+                      borderRadius: Math.min(preset.style.borderRadius / 12, 2)
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+                 <button 
+                   onClick={(e) => {
+                     e.stopPropagation();
+                     setPreviewPreset(preset);
+                   }}
+                   className="p-1.5 bg-white/90 dark:bg-black/60 rounded-full hover:scale-110 transition-transform shadow-lg text-blue-500"
+                   title="View Full Preview"
+                 >
+                    <Maximize2 size={12} />
+                 </button>
+                 <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deletePreset(preset.id);
+                   }}
+                   className="p-1.5 bg-white/90 dark:bg-black/60 rounded-full hover:scale-110 transition-transform shadow-lg text-red-500"
+                   title={t.delete}
+                  >
+                    <Trash2 size={12} />
+                  </button>
+              </div>
+            </div>
+
+            <div className="p-1.5 bg-white/50 dark:bg-black/20 backdrop-blur-sm">
+              <span className="text-[9px] font-medium truncate opacity-70 block text-center">{preset.name}</span>
+            </div>
+          </div>
+        ))}
+
+        {presets.length === 0 && !isSaving && (
+          <div className="col-span-3 py-4 text-center opacity-30 text-[10px] italic border border-dashed border-black/10 dark:border-white/10 rounded-lg">
+            {t.noPresets}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const PresetCard = ({
+  content,
+  index,
+  style,
+  getPreviewDimensions
+}: {
+  content: string;
+  index: number;
+  style: CardStyle;
+  getPreviewDimensions: (style: CardStyle) => { width: number; height: number };
+}) => {
+  const base = getPreviewDimensions(style);
+
+  const outerStyle: CSSProperties = {
+    width: `${base.width}px`,
+    height: `${base.height}px`,
+    padding: style.enableBackground ? `${style.padding}px` : '0',
+    background: 'transparent',
+  };
+
+  const innerStyle: CSSProperties = {
+    fontFamily: style.fontFamily,
+    backgroundColor: 'transparent',
+    color: style.textColor,
+    fontSize: `${style.fontSize}px`,
+    borderRadius: `${style.borderRadius}px`,
+    borderWidth: `${style.borderWidth}px`,
+    borderColor: style.borderColor,
+    boxShadow: style.shadowEnabled ? style.shadow : 'none',
+    padding: '2rem',
+    paddingTop: 0,
+    paddingBottom: 0,
+    paddingLeft: 0,
+    paddingRight: 0,
+  };
+
+  const renderOuterBackground = () => {
+    if (!style.enableBackground) return null;
+
+    if (style.backgroundType === 'image' && style.backgroundImage) {
+      return (
+        <div className="absolute inset-0 overflow-hidden -z-10 rounded-none pointer-events-none">
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              backgroundImage: `url(${style.backgroundImage})`,
+              backgroundPosition: 'center',
+              backgroundSize: 'cover',
+              transform: `translate(${style.backgroundConfig.x}px, ${style.backgroundConfig.y}px) scale(${style.backgroundConfig.scale})`,
+              filter: `blur(${style.backgroundConfig.blur}px)`
+            }}
+          />
+        </div>
+      );
+    }
+
+    if (style.backgroundType === 'gradient') {
+      return <div className="absolute inset-0 -z-10 pointer-events-none" style={{ background: style.backgroundValue }} />;
+    }
+
+    return <div className="absolute inset-0 -z-10 pointer-events-none" style={{ background: style.backgroundValue }} />;
+  };
+
+  const renderInnerBackground = () => {
+    const type = style.cardBackgroundType || 'solid';
+    const innerRadius = Math.max(0, style.borderRadius - style.borderWidth);
+    const radiusStyle: CSSProperties = { borderRadius: `${innerRadius}px` };
+
+    if (type === 'image' && style.cardBackgroundImage) {
+      return (
+        <div className="absolute inset-0 overflow-hidden -z-10 pointer-events-none" style={radiusStyle}>
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              backgroundImage: `url(${style.cardBackgroundImage})`,
+              backgroundPosition: 'center',
+              backgroundSize: 'cover',
+              transform: `translate(${style.cardBackgroundConfig.x}px, ${style.cardBackgroundConfig.y}px) scale(${style.cardBackgroundConfig.scale})`,
+              filter: `blur(${style.cardBackgroundConfig.blur}px)`
+            }}
+          />
+        </div>
+      );
+    }
+
+    if (type === 'gradient') {
+      return <div className="absolute inset-0 -z-10 pointer-events-none" style={{ ...radiusStyle, background: style.cardGradientValue }} />;
+    }
+
+    return <div className="absolute inset-0 -z-10 pointer-events-none bg-current" style={{ ...radiusStyle, color: style.backgroundColor }} />;
+  };
+
+  return (
+    <div className="relative shadow-2xl overflow-hidden flex flex-col flex-shrink-0" style={outerStyle}>
+      {renderOuterBackground()}
+
+      <div className="relative w-full h-full flex flex-col overflow-hidden" style={innerStyle}>
+        {renderInnerBackground()}
+
+        {style.template === 'default' && (
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-pink-400 to-orange-300 blur-3xl opacity-20 -z-0 pointer-events-none" />
+        )}
+
+        <div className="relative z-10 h-full flex flex-col">
+          <div className="prose prose-sm max-w-none flex-1 p-8 overflow-hidden">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm, remarkBreaks]}
+              components={{
+                h1: ({ ...props }) => (
+                  <div className="flex flex-col items-center mb-8 first:mt-0 mt-8">
+                    <h1 style={{ color: style.h1Color || style.textColor }} className="text-3xl font-bold mb-2 text-center" {...props} />
+                    <div className="h-1 w-24 rounded-full" style={{ backgroundColor: style.h1LineColor || style.accentColor }} />
+                  </div>
+                ),
+                h2: ({ ...props }) => (
+                  <div className="flex justify-center mb-6 mt-8 first:mt-0">
+                    <h2
+                      style={{
+                        backgroundColor: style.h2BackgroundColor || style.accentColor,
+                        color: style.h2Color || '#fff'
+                      }}
+                      className="text-lg font-bold px-4 py-1.5 shadow-md rounded-lg"
+                      {...props}
+                    />
+                  </div>
+                ),
+                h3: ({ ...props }) => (
+                  <h3
+                    style={{
+                      color: style.h3Color || style.textColor,
+                      borderLeftColor: style.h3LineColor || style.accentColor
+                    }}
+                    className="text-xl font-bold mb-4 mt-6 first:mt-0 pl-3 border-l-4"
+                    {...props}
+                  />
+                ),
+                p: ({ ...props }) => (
+                  <p style={{ color: style.textColor }} className="mb-4 leading-relaxed opacity-90 first:mt-0" {...props} />
+                ),
+                ul: ({ ...props }) => <ul style={{ color: style.textColor }} className="mb-4 list-disc list-outside pl-5 space-y-1" {...props} />,
+                ol: ({ ...props }) => <ol style={{ color: style.textColor }} className="mb-4 list-decimal list-outside pl-5 space-y-1" {...props} />,
+                li: ({ ...props }) => <li className="pl-1 marker:opacity-70 [&>p]:mb-2" {...props} />,
+                table: ({ ...props }) => (
+                  <div className="overflow-x-auto mb-6 rounded-lg border border-current opacity-90">
+                    <table className="w-full text-left text-sm border-collapse" {...props} />
+                  </div>
+                ),
+                thead: ({ ...props }) => <thead className="bg-black/5 dark:bg-white/10 font-semibold" {...props} />,
+                tbody: ({ ...props }) => <tbody className="divide-y divide-current/10" {...props} />,
+                tr: ({ ...props }) => <tr className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors" {...props} />,
+                th: ({ ...props }) => <th className="p-3 border-b border-current/20 whitespace-nowrap" {...props} />,
+                td: ({ ...props }) => <td className="p-3 border-b border-current/10" {...props} />,
+                pre: ({ children }) => <>{children}</>,
+                blockquote: ({ ...props }) => (
+                  <blockquote
+                    style={{
+                      borderLeftColor: style.blockquoteBorderColor,
+                      backgroundColor: style.blockquoteBackgroundColor
+                    }}
+                    className="border-l-4 pl-4 py-2 my-4 italic opacity-90 rounded-r-lg rounded-bl-sm [&>p:last-child]:mb-0"
+                    {...props}
+                  />
+                ),
+                a: ({ ...props }) => <a style={{ color: style.accentColor }} className="underline decoration-auto underline-offset-2" {...props} />,
+                img: ({ src, alt, ...props }: { src?: string; alt?: string }) => {
+                  if (src === 'spacer') {
+                    return <div className="w-full" style={{ height: '200px' }} />;
+                  }
+                  let width: string | undefined;
+                  let cleanSrc = src;
+                  if (src && src.includes('#width=')) {
+                    const parts = src.split('#width=');
+                    cleanSrc = parts[0];
+                    width = parts[1];
+                  }
+                  return (
+                    <img
+                      src={cleanSrc}
+                      alt={alt}
+                      crossOrigin="anonymous"
+                      className="markdown-image"
+                      style={{
+                        display: 'block',
+                        maxWidth: '100%',
+                        width: width || 'auto',
+                        borderRadius: '8px',
+                        marginTop: '1rem',
+                        marginBottom: '1rem'
+                      }}
+                      {...props}
+                    />
+                  );
+                },
+                code: ({ children, ...props }: { children?: ReactNode }) => {
+                  const text = String(children ?? '');
+                  return !text.includes('\n') ? (
+                    <code style={{ backgroundColor: style.codeBackgroundColor }} className="rounded px-1.5 py-0.5 text-[0.9em] font-mono" {...props}>
+                      {children}
+                    </code>
+                  ) : (
+                    <code style={{ backgroundColor: style.codeBackgroundColor, fontSize: '0.8em' }} className="block rounded-lg p-4 font-mono my-4 overflow-x-auto whitespace-pre-wrap break-words" {...props}>
+                      {children}
+                    </code>
+                  );
+                }
+              }}
+            >
+              {content}
+            </ReactMarkdown>
+          </div>
+
+          <div
+            className="flex-shrink-0 w-full px-8 pb-4 pt-2 flex items-center relative font-mono uppercase tracking-widest pointer-events-none text-[10px] h-8"
+            style={{ opacity: style.watermark.opacity ?? 0.6 }}
+          >
+            <div className="absolute left-8 flex items-center gap-4">
+              {style.pageNumber.enabled && style.pageNumber.position === 'left' && <span className="font-bold">{index + 1}</span>}
+              {style.watermark.enabled && style.watermark.position === 'left' && <span>{style.watermark.content}</span>}
+            </div>
+
+            <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-4">
+              {style.pageNumber.enabled && style.pageNumber.position === 'center' && <span className="font-bold">{index + 1}</span>}
+              {style.watermark.enabled && style.watermark.position === 'center' && <span>{style.watermark.content}</span>}
+            </div>
+
+            <div className="absolute right-8 flex items-center gap-4">
+              {style.watermark.enabled && style.watermark.position === 'right' && <span>{style.watermark.content}</span>}
+              {style.pageNumber.enabled && style.pageNumber.position === 'right' && <span className="font-bold">{index + 1}</span>}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const SliderControl = ({ label, value, min, max, step = 1, onChange }: { label: string, value: number, min: number, max: number, step?: number, onChange: (val: number) => void }) => {
   const cleanLabel = label.replace(/\s*\(px\)/i, '').replace(/\s*\(°\)/i, '');
@@ -287,6 +829,9 @@ export const Sidebar = () => {
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+              {/* Presets */}
+              <PresetsManager />
+
               {/* Layout */}
               <div className="mb-8 space-y-4">
                 <h2 className="text-sm font-semibold mb-4 opacity-80 flex items-center gap-2">
@@ -456,6 +1001,16 @@ export const Sidebar = () => {
 
                     {cardStyle.backgroundType === 'gradient' && (
                       <div className="space-y-3">
+                        <GradientPresets 
+                          onSelect={(start, end) => {
+                            const angle = cardStyle.gradientAngle || 135;
+                            updateCardStyle({ 
+                              gradientStart: start,
+                              gradientEnd: end,
+                              backgroundValue: `linear-gradient(${angle}deg, ${start} 0%, ${end} 100%)` 
+                            });
+                          }}
+                        />
                         <ColorPicker 
                           label={t.startColor}
                           color={cardStyle.gradientStart || '#667eea'}
@@ -562,6 +1117,16 @@ export const Sidebar = () => {
 
                     {cardStyle.cardBackgroundType === 'gradient' && (
                       <div className="space-y-3">
+                        <GradientPresets 
+                          onSelect={(start, end) => {
+                            const angle = cardStyle.cardGradientAngle || 135;
+                            updateCardStyle({ 
+                              cardGradientStart: start,
+                              cardGradientEnd: end,
+                              cardGradientValue: `linear-gradient(${angle}deg, ${start} 0%, ${end} 100%)` 
+                            });
+                          }}
+                        />
                         <ColorPicker 
                           label={t.startColor}
                           color={cardStyle.cardGradientStart || '#ffffff'}

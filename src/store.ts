@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { temporal } from 'zundo';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 export type CustomFont = {
   name: string;
@@ -116,6 +117,12 @@ export type CardStyle = {
   };
 };
 
+export type StylePreset = {
+  id: string;
+  name: string;
+  style: CardStyle;
+};
+
 interface AppState {
   markdown: string;
   setMarkdown: (markdown: string) => void;
@@ -146,7 +153,23 @@ interface AppState {
 
   isResetting: boolean;
   setIsResetting: (isResetting: boolean) => void;
+
+  presets: StylePreset[];
+  savePreset: (name: string) => void;
+  deletePreset: (id: string) => void;
+  applyPreset: (style: CardStyle) => void;
 }
+
+export const PRESET_GRADIENTS = [
+  { start: '#a8ff78', end: '#78ffd6', name: 'Minty Fresh' },
+  { start: '#E0C3FC', end: '#8EC5FC', name: 'Lavender Bliss' },
+  { start: '#ff9a9e', end: '#fad0c4', name: 'Peach Sorbet' },
+  { start: '#2193b0', end: '#6dd5ed', name: 'Cool Blues' },
+  { start: '#ee9ca7', end: '#ffdde1', name: 'Cherry Blossom' },
+  { start: '#89f7fe', end: '#66a6ff', name: 'Morning Dew' },
+  { start: '#f6d365', end: '#fda085', name: 'Spring Warmth' },
+  { start: '#fccb90', end: '#d57eeb', name: 'Pastel Violet' },
+];
 
 const DEFAULT_MARKDOWN_EN = `# There should be a title
 
@@ -236,11 +259,11 @@ const INITIAL_CARD_STYLE: CardStyle = {
   h3Color: '#000000',
   h3LineColor: '#3b82f6',
   shadowEnabled: true,
-  shadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+  shadow: '2px 5px 15px 0px rgba(0, 0, 0, 0.25)',
   shadowConfig: {
-    x: 0,
-    y: 25,
-    blur: 5,
+    x: 2,
+    y: 5,
+    blur: 15,
     spread: 0,
     color: '#000000',
     opacity: 0.25
@@ -259,7 +282,8 @@ const INITIAL_CARD_STYLE: CardStyle = {
 
 export const useStore = create<AppState>()(
   temporal(
-    (set) => ({
+    persist(
+      (set) => ({
   markdown: DEFAULT_MARKDOWN_ZH,
   setMarkdown: (markdown) => set({ markdown }),
 
@@ -404,7 +428,44 @@ export const useStore = create<AppState>()(
 
   isResetting: false,
   setIsResetting: (isResetting) => set({ isResetting }),
+
+  presets: [],
+  savePreset: (name) => set((state) => ({
+    presets: [
+      ...state.presets,
+      {
+        id: crypto.randomUUID(),
+        name,
+        style: JSON.parse(JSON.stringify(state.cardStyle)), // Deep clone
+      }
+    ]
+  })),
+  deletePreset: (id) => set((state) => ({
+    presets: state.presets.filter((p) => p.id !== id)
+  })),
+  applyPreset: (style) => set({ cardStyle: JSON.parse(JSON.stringify(style)) }),
     }),
+    {
+      name: 'md2card-storage',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        theme: state.theme,
+        language: state.language,
+        markdown: state.markdown,
+        cardStyle: state.cardStyle,
+        cardImages: state.cardImages,
+        activeCardIndex: state.activeCardIndex,
+        presets: state.presets,
+      }),
+      onRehydrateStorage: () => (state) => {
+        if (state?.theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }
+    }
+    ),
     {
       // Configure Zundo: only track changes to markdown and cardImages
       partialize: (state) => ({ 

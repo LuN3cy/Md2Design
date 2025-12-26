@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, CheckCircle2, Sparkles, Monitor, ChevronRight, RotateCcw, Plus, Image as ImageIcon } from 'lucide-react';
+import { X, CheckCircle2, Sparkles, Monitor, ChevronRight, RotateCcw, Plus, Image as ImageIcon, Trash2, Maximize2 } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import { useStore } from '../store';
 import ReactMarkdown from 'react-markdown';
@@ -19,6 +19,29 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
 
   // Update data
   const updates = [
+    {
+      version: 'v1.5.0',
+      date: '2025-12-26',
+      title: {
+        en: 'Style Presets & Gradients',
+        zh: '样式预设 & 渐变系统'
+      },
+      changes: {
+        en: [
+          'Added style presets management (Save, Preview, Delete)',
+          'Added 8 beautiful built-in gradient presets',
+          'Persistent storage for all your custom styles',
+          'Optimized default shadow effects',
+        ],
+        zh: [
+          '增加样式预设管理功能（保存、预览、删除）',
+          '内置 8 款清新好看的渐变预设',
+          '所有自定义样式均支持持久化存储',
+          '优化了默认的阴影视觉效果',
+        ]
+      },
+      demo: 'presets-gradients'
+    },
     {
       version: 'v1.4.1',
       date: '2025-12-25',
@@ -239,6 +262,12 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
                              <DemoMarkdown />
                            </div>
                          )}
+
+                         {currentUpdate.demo === 'presets-gradients' && (
+                           <div className="bg-slate-100 dark:bg-[#0a0a0a] rounded-2xl p-6 border border-black/5 dark:border-white/5 shadow-inner min-h-[300px] flex flex-col items-center justify-center gap-8">
+                              <DemoPresets />
+                           </div>
+                         )}
                          
                          {currentUpdate.demo === 'reset-undo' && (
                            <div className="bg-slate-100 dark:bg-[#0a0a0a] rounded-2xl p-8 border border-black/5 dark:border-white/5 shadow-inner flex items-center justify-center min-h-[200px] overflow-hidden relative">
@@ -421,6 +450,207 @@ const DemoResetUndo = () => {
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+};
+
+const INITIAL_DEMO_PRESETS = [
+  { start: '#a8ff78', end: '#78ffd6', name: 'Minty Fresh' },
+  { start: '#E0C3FC', end: '#8EC5FC', name: 'Lavender' },
+  { start: '#ff9a9e', end: '#fad0c4', name: 'Peach' },
+  { start: '#2193b0', end: '#6dd5ed', name: 'Cool Blue' },
+];
+
+const DemoPresets = () => {
+  const { language } = useStore();
+  const [activePreset, setActivePreset] = useState(0);
+  const [presetList, setPresetList] = useState([...INITIAL_DEMO_PRESETS]);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+  
+  const safeActive = presetList.length ? Math.min(activePreset, presetList.length - 1) : 0;
+  const active = presetList[safeActive];
+  const preview = previewIndex === null ? null : presetList[previewIndex];
+
+  const handleRestore = () => {
+    setPresetList([...INITIAL_DEMO_PRESETS]);
+    setActivePreset(0);
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-8 w-full max-w-md">
+      <AnimatePresence>
+        {preview && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md"
+            onClick={() => setPreviewIndex(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.96, opacity: 0, y: 16 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.96, opacity: 0, y: 16 }}
+              className="relative w-full max-w-xl overflow-hidden rounded-3xl border border-white/20 bg-white/50 dark:bg-black/40 backdrop-blur-2xl shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between p-4 border-b border-black/5 dark:border-white/10">
+                <div className="min-w-0">
+                  <div className="text-sm font-bold truncate">{preview.name}</div>
+                  <div className="text-[10px] opacity-60 truncate">{language === 'zh' ? '单独预览' : 'Quick Preview'}</div>
+                </div>
+                <button
+                  onClick={() => setPreviewIndex(null)}
+                  className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors"
+                  aria-label="Close"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="p-6">
+                <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-white/20">
+                  <div
+                    className="absolute inset-0"
+                    style={{ background: `linear-gradient(135deg, ${preview.start} 0%, ${preview.end} 100%)` }}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center p-8">
+                    <div className="w-full h-full bg-white/85 dark:bg-black/35 backdrop-blur-md rounded-2xl p-6 flex flex-col gap-3 shadow-2xl">
+                      <div className="w-12 h-2 bg-blue-500/50 rounded-full" />
+                      <div className="space-y-2">
+                        <div className="w-full h-2 bg-black/5 dark:bg-white/10 rounded-full" />
+                        <div className="w-5/6 h-2 bg-black/5 dark:bg-white/10 rounded-full" />
+                        <div className="w-4/6 h-2 bg-black/5 dark:bg-white/10 rounded-full" />
+                      </div>
+                      <div className="mt-auto flex justify-between items-end opacity-60 font-mono uppercase tracking-widest text-[10px]">
+                        <span>{language === 'zh' ? '水印' : 'Watermark'}</span>
+                        <span>1</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Visual Preview */}
+      <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl group border border-white/20">
+        <motion.div 
+          key={safeActive}
+          initial={{ opacity: 0, scale: 1.1 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="absolute inset-0"
+          style={{ background: active ? `linear-gradient(135deg, ${active.start} 0%, ${active.end} 100%)` : 'linear-gradient(135deg, #e5e7eb 0%, #cbd5e1 100%)' }}
+        />
+        
+        {/* Mock Card */}
+        <div className="absolute inset-0 flex items-center justify-center p-8">
+          <motion.div 
+            animate={{ 
+              boxShadow: "2px 5px 15px rgba(0,0,0,0.15)"
+            }}
+            className="w-full h-full bg-white/90 dark:bg-black/40 backdrop-blur-md rounded-2xl p-6 flex flex-col gap-3"
+          >
+             <div className="w-12 h-2 bg-blue-500/50 rounded-full" />
+             <div className="space-y-2">
+               <div className="w-full h-2 bg-black/5 dark:bg-white/10 rounded-full" />
+               <div className="w-5/6 h-2 bg-black/5 dark:bg-white/10 rounded-full" />
+               <div className="w-4/6 h-2 bg-black/5 dark:bg-white/10 rounded-full" />
+             </div>
+             <div className="mt-auto flex justify-between items-end">
+                <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10" />
+                <div className="text-[8px] font-bold opacity-20 tracking-widest uppercase">Preset Preview</div>
+             </div>
+          </motion.div>
+        </div>
+
+        {/* Floating Label */}
+        <div className="absolute bottom-4 left-4 px-3 py-1 bg-black/20 backdrop-blur-md rounded-full text-[10px] font-bold text-white border border-white/10">
+          {active?.name || (language === 'zh' ? '暂无预设' : 'No presets')}
+        </div>
+      </div>
+
+      {/* Interactive Controls */}
+      <div className="flex flex-col items-center gap-4 w-full">
+        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+          {language === 'zh' ? '点击切换渐变预设' : 'Click to Switch Gradients'}
+        </div>
+        <div className="flex gap-3">
+          {presetList.map((p, i) => (
+            <button
+              key={i}
+              onClick={() => setActivePreset(i)}
+              className={`w-10 h-10 rounded-xl border-2 transition-all p-0.5 ${safeActive === i ? 'border-blue-500 scale-110 shadow-lg' : 'border-transparent hover:scale-105'}`}
+            >
+              <div 
+                className="w-full h-full rounded-lg"
+                style={{ background: `linear-gradient(135deg, ${p.start} 0%, ${p.end} 100%)` }}
+              />
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="w-full">
+        <div className="flex items-center justify-center gap-3 mb-3">
+          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+            {language === 'zh' ? '单独预览与删除预设' : 'Preview & Delete Presets'}
+          </div>
+          <button
+            onClick={handleRestore}
+            className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded-md text-blue-500 transition-colors flex items-center gap-1"
+            title={language === 'zh' ? '恢复默认预设' : 'Restore Default Presets'}
+          >
+            <RotateCcw size={10} />
+            <span className="text-[8px] font-bold uppercase">{language === 'zh' ? '恢复' : 'Restore'}</span>
+          </button>
+        </div>
+        <div className="grid grid-cols-4 gap-3 justify-items-center">
+          {presetList.map((p, i) => (
+            <div key={p.name} className="group w-14">
+              <div className="relative w-14 h-14 rounded-2xl overflow-hidden border border-white/20 shadow-lg transform-gpu">
+                <div style={{ background: `linear-gradient(135deg, ${p.start} 0%, ${p.end} 100%)` }} className="absolute inset-0" />
+                <div className="absolute inset-0 flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 backdrop-blur-sm rounded-2xl">
+                  <button
+                    onClick={() => setPreviewIndex(i)}
+                    className="p-1.5 rounded-full bg-white/80 dark:bg-black/40 hover:scale-110 transition-transform"
+                    aria-label="Preview"
+                  >
+                    <Maximize2 size={12} className="text-blue-500" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setPresetList((prev) => prev.filter((_, idx) => idx !== i));
+                      setActivePreset((prev) => (prev === i ? 0 : prev > i ? prev - 1 : prev));
+                      setPreviewIndex((prev) => (prev === i ? null : prev !== null && prev > i ? prev - 1 : prev));
+                    }}
+                    className="p-1.5 rounded-full bg-white/80 dark:bg-black/40 hover:scale-110 transition-transform"
+                    aria-label="Delete"
+                  >
+                    <Trash2 size={12} className="text-red-500" />
+                  </button>
+                </div>
+              </div>
+              <div className="mt-1 text-[9px] text-center truncate opacity-70">{p.name}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      <div className="flex items-center gap-4 p-4 bg-blue-500/5 rounded-2xl border border-blue-500/10 w-full">
+         <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500">
+           <Plus size={20} />
+         </div>
+         <div className="flex-1">
+            <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              {language === 'zh' ? '样式预设管理' : 'Style Presets'}
+            </div>
+            <div className="text-[10px] text-slate-500">
+              {language === 'zh' ? '现在您可以一键保存并管理您喜欢的样式组合。' : 'Save and manage your favorite style combinations easily.'}
+            </div>
+         </div>
+      </div>
     </div>
   );
 };
