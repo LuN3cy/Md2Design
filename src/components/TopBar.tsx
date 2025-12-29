@@ -178,7 +178,7 @@ export const TopBar = () => {
         // Generate sample blob
         const options = { 
             pixelRatio: scale,
-            filter: (node: any) => !node.classList?.contains('export-ignore')
+            filter: (node: HTMLElement) => !node.classList?.contains('export-ignore')
         };
         
         let blob;
@@ -215,7 +215,7 @@ export const TopBar = () => {
         const cards = Array.from(document.querySelectorAll('[id^="card-"]')) as HTMLElement[];
         const options = { 
             pixelRatio: scale,
-            filter: (node: any) => !node.classList?.contains('export-ignore')
+            filter: (node: HTMLElement) => !node.classList?.contains('export-ignore')
         };
         
         let completed = 0;
@@ -298,11 +298,11 @@ export const TopBar = () => {
             // Folder Export (File System Access API)
             if (exportTarget === 'folder' && 'showDirectoryPicker' in window) {
                 try {
-                    // @ts-ignore
+                    // @ts-expect-error - File System Access API
                     const dirHandle = await window.showDirectoryPicker();
                     let targetHandle = dirHandle;
                     if (folderName) {
-                        // @ts-ignore
+
                         targetHandle = await dirHandle.getDirectoryHandle(folderName, { create: true });
                     }
 
@@ -311,9 +311,9 @@ export const TopBar = () => {
                     const tasks = cards.map((card, i) => async () => {
                         const blob = await generateBlob(card);
                         const fileName = `${generateFileName(i, cards.length)}.${format}`;
-                        // @ts-ignore
+
                         const fileHandle = await targetHandle.getFileHandle(fileName, { create: true });
-                        // @ts-ignore
+
                         const writable = await fileHandle.createWritable();
                         await writable.write(blob);
                         await writable.close();
@@ -660,7 +660,7 @@ export const TopBar = () => {
                          {['png', 'jpg'].map((f) => (
                            <button
                              key={f}
-                             onClick={() => setFormat(f as any)}
+                             onClick={() => setFormat(f as 'png' | 'jpg')}
                              className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all uppercase ${
                                format === f ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
                              }`}
@@ -676,7 +676,7 @@ export const TopBar = () => {
                          {[1, 2, 3, 4].map((s) => (
                            <button
                              key={s}
-                             onClick={() => setScale(s as any)}
+                             onClick={() => setScale(s as 1 | 2 | 3 | 4)}
                              className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
                                scale === s ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
                              }`}
@@ -698,7 +698,7 @@ export const TopBar = () => {
                        ].map((mode) => (
                          <button
                            key={mode.value}
-                           onClick={() => setExportMode(mode.value as any)}
+                           onClick={() => setExportMode(mode.value as 'single' | 'multiple')}
                            className={`p-3 rounded-xl border transition-all text-left flex items-center justify-between group ${
                              exportMode === mode.value 
                                ? 'bg-blue-500/10 border-blue-500/50' 
@@ -732,7 +732,7 @@ export const TopBar = () => {
                          ].map((target) => (
                            <button
                              key={target.value}
-                             onClick={() => setExportTarget(target.value as any)}
+                             onClick={() => setExportTarget(target.value as 'zip' | 'folder')}
                              className={`p-3 rounded-xl border transition-all text-left flex items-center justify-between group ${
                                exportTarget === target.value 
                                  ? 'bg-blue-500/10 border-blue-500/50' 
@@ -787,7 +787,7 @@ export const TopBar = () => {
                         ].map((m) => (
                           <button
                             key={m.id}
-                            onClick={() => setNamingMode(m.id as any)}
+                             onClick={() => setNamingMode(m.id as 'system' | 'custom')}
                             className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
                               namingMode === m.id ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white'
                             }`}
@@ -817,30 +817,30 @@ export const TopBar = () => {
                         <div className="space-y-4">
                           {/* Part Selectors (Multi-select) */}
                           <div className="flex flex-wrap gap-2">
-                            {[
+                            {([
                               { id: 'prefix', label: t.namingPrefix },
                               { id: 'date', label: t.namingDate },
                               { id: 'custom', label: t.namingCustom },
                               { id: 'number', label: t.namingNumber }
-                            ].map((part) => (
+                            ] as const).map((part) => (
                               <button
                                 key={part.id}
                                 onClick={() => {
-                                  if (namingParts.includes(part.id as any)) {
+                                  if (namingParts.includes(part.id)) {
                                     setNamingParts(namingParts.filter(p => p !== part.id));
                                   } else {
-                                    setNamingParts([...namingParts, part.id as any]);
+                                    setNamingParts([...namingParts, part.id]);
                                   }
                                 }}
                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
-                                  namingParts.includes(part.id as any)
+                                  namingParts.includes(part.id)
                                     ? 'bg-blue-500 border-blue-500 text-white shadow-md'
                                     : 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/5 text-black/40 dark:text-white/40'
                                 }`}
                               >
                                 {part.label}
-                                {namingParts.includes(part.id as any) && (
-                                  <span className="ml-1.5 opacity-60">{namingParts.indexOf(part.id as any) + 1}</span>
+                                {namingParts.includes(part.id) && (
+                                  <span className="ml-1.5 opacity-60">{namingParts.indexOf(part.id) + 1}</span>
                                 )}
                               </button>
                             ))}

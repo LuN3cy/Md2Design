@@ -19,9 +19,12 @@ export const Editor = () => {
     if (prevAutoHeightRef.current && !cardStyle.autoHeight && markdown.length > 500) {
       const paginated = paginateMarkdown(markdown, cardStyle);
       if (paginated !== markdown) {
-        setMarkdown(paginated);
-        setShowPaginationToast(true);
-        setTimeout(() => setShowPaginationToast(false), 4000);
+        // Defer state update to avoid cascading render warning
+        setTimeout(() => {
+          setMarkdown(paginated);
+          setShowPaginationToast(true);
+          setTimeout(() => setShowPaginationToast(false), 4000);
+        }, 0);
       }
     }
     prevAutoHeightRef.current = cardStyle.autoHeight;
@@ -51,7 +54,7 @@ export const Editor = () => {
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selected = markdown.substring(start, end);
-    const escaped = marker.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const escaped = marker.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
     const regex = new RegExp(`^${escaped}(.*)${escaped}$`);
     
     if (regex.test(selected)) {
@@ -79,7 +82,7 @@ export const Editor = () => {
     const end = textarea.selectionEnd;
     
     // Find line start/end
-    let lineStart = markdown.lastIndexOf('\n', start - 1) + 1;
+    const lineStart = markdown.lastIndexOf('\n', start - 1) + 1;
     let lineEnd = markdown.indexOf('\n', end);
     if (lineEnd === -1) lineEnd = markdown.length;
     

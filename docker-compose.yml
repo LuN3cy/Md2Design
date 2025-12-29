@@ -1,0 +1,7 @@
+services:
+  md2design:
+    build: .
+    container_name: md2design-app
+    ports:
+      - "8080:80"
+    restart: always

@@ -82,7 +82,7 @@ export const paginateMarkdown = (markdown: string, style: CardStyle): string => 
   // 2. Split by line for granular height calculation
   const lines = cleanedMarkdown.split('\n');
   
-  let pages: string[] = [];
+  const pages: string[] = [];
   let currentPageLines: string[] = [];
   let currentHeight = 0;
   let isFirstInPage = true;

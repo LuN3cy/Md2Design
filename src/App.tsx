@@ -25,7 +25,7 @@ function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [undo, redo]);
 
   useEffect(() => {
     if (theme === 'dark') {

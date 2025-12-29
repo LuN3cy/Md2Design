@@ -5,7 +5,7 @@ import { useStore } from '../store';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 interface ChangelogModalProps {
   isOpen: boolean;
@@ -18,7 +18,7 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
   const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
 
   // Update data
-  const updates = [
+  const updates = useMemo(() => [
     {
       version: 'v1.7.0',
       date: '2025-12-29',
@@ -188,13 +188,15 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
       },
       demo: 'bg-layout'
     }
-  ];
+  ], []);
 
   useEffect(() => {
     if (isOpen && !selectedVersion) {
-      setSelectedVersion(updates[0].version);
+      setTimeout(() => {
+        setSelectedVersion(updates[0].version);
+      }, 0);
     }
-  }, [isOpen]);
+  }, [isOpen, selectedVersion, updates]);
 
   const currentUpdate = updates.find(u => u.version === selectedVersion) || updates[0];
 
@@ -536,7 +538,7 @@ const DemoExportNaming = () => {
   };
 
   const getLabel = (part: string) => {
-    const labels: any = { 
+    const labels: Record<string, string> = { 
       'prefix': language === 'zh' ? '前缀' : 'Prefix', 
       'date': language === 'zh' ? '日期' : 'Date', 
       'custom': language === 'zh' ? '自定义名称' : 'Custom Name', 
@@ -607,7 +609,7 @@ const DemoExportNaming = () => {
         ].map((m) => (
           <button
             key={m.id}
-            onClick={() => setNamingMode(m.id as any)}
+            onClick={() => setNamingMode(m.id as 'system' | 'custom')}
             className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
               namingMode === m.id ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white'
             }`}
@@ -863,8 +865,10 @@ const DemoResetUndo = () => {
     if (isActive && countdown > 0) {
       timer = setInterval(() => setCountdown(c => c - 1), 1000);
     } else if (countdown === 0) {
-      setIsActive(false);
-      setShowToast(false);
+      setTimeout(() => {
+        setIsActive(false);
+        setShowToast(false);
+      }, 0);
     }
     return () => clearInterval(timer);
   }, [isActive, countdown]);
@@ -1338,7 +1342,7 @@ const DemoAutoHeight = () => {
         ].map((m) => (
           <button
             key={m.id}
-            onClick={() => setMode(m.id as any)}
+            onClick={() => setMode(m.id as 'portrait' | 'landscape' | 'auto')}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
               mode === m.id 
                 ? 'bg-blue-500 text-white shadow-md' 
