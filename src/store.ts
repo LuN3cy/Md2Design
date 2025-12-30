@@ -58,6 +58,13 @@ export type CardStyle = {
   
   padding: number;
   contentPadding: number;
+  cardPadding: {
+    top: number;
+    right: number;
+    bottom: number;
+    left: number;
+  };
+  cardPaddingSync: boolean;
 
   customCSS: string;
   template: 'default'; // Simplified to just default
@@ -115,6 +122,7 @@ export type CardStyle = {
     position: 'left' | 'center' | 'right';
     opacity: number;
     fontSize: number;
+    color?: string;
   };
 
   // Page Number
@@ -123,6 +131,7 @@ export type CardStyle = {
     position: 'left' | 'center' | 'right';
     opacity: number;
     fontSize: number;
+    color?: string;
   };
 };
 
@@ -252,6 +261,13 @@ const INITIAL_CARD_STYLE: CardStyle = {
   },
   padding: 40,
   contentPadding: 24,
+  cardPadding: {
+    top: 32,
+    right: 32,
+    bottom: 32,
+    left: 32
+  },
+  cardPaddingSync: true,
   customCSS: '',
       template: 'default',
       fontSize: 16,
@@ -296,14 +312,16 @@ const INITIAL_CARD_STYLE: CardStyle = {
     enabled: false,
     content: 'Md2Design',
     position: 'center',
-    opacity: 0.1,
-    fontSize: 10
+    opacity: 0.5,
+    fontSize: 10,
+    color: '' // Empty means use default text color
   },
   pageNumber: {
     enabled: false,
     position: 'center',
-    opacity: 0.6,
-    fontSize: 10
+    opacity: 0.5,
+    fontSize: 10,
+    color: '' // Empty means use default text color
   }
 };
 
@@ -483,7 +501,7 @@ export const useStore = create<AppState>()(
     {
       name: 'md2card-storage',
       storage: createJSONStorage(() => localStorage),
-      version: 2,
+      version: 3,
       migrate: (persistedState: any, version: number) => {
         if (version === 0) {
           // Migration for v0 to v1: Add headingScale and contentPadding
@@ -504,6 +522,21 @@ export const useStore = create<AppState>()(
               h1FontSize: persistedState.cardStyle.h1FontSize ?? 32,
               h2FontSize: persistedState.cardStyle.h2FontSize ?? 24,
               h3FontSize: persistedState.cardStyle.h3FontSize ?? 20,
+            };
+          }
+        }
+        if (version <= 2) {
+          // Migration for v2 to v3: Add cardPadding and cardPaddingSync
+          if (persistedState.cardStyle) {
+            persistedState.cardStyle = {
+              ...persistedState.cardStyle,
+              cardPadding: persistedState.cardStyle.cardPadding ?? {
+                top: persistedState.cardStyle.contentPadding ?? 32,
+                right: persistedState.cardStyle.contentPadding ?? 32,
+                bottom: persistedState.cardStyle.contentPadding ?? 32,
+                left: persistedState.cardStyle.contentPadding ?? 32
+              },
+              cardPaddingSync: persistedState.cardStyle.cardPaddingSync ?? true,
             };
           }
         }

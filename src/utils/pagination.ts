@@ -67,14 +67,20 @@ export const paginateMarkdown = (markdown: string, style: CardStyle): string => 
   
   // Use a fixed base width for pagination calculation to prevent sudden height jumps when scaling
   const baseWidth = Math.min(width, 800); 
-  const contentWidth = baseWidth - (style.padding * 2) - (style.contentPadding * 2);
-  const effectiveContentPadding = Math.max(style.contentPadding, 24);
+  // Calculate average horizontal padding
+  const horizontalPadding = style.cardPadding ? (style.cardPadding.left + style.cardPadding.right) : (style.contentPadding * 2);
+  const contentWidth = baseWidth - (style.padding * 2) - horizontalPadding;
+  
+  // Calculate vertical padding
+  const verticalPadding = style.cardPadding ? (style.cardPadding.top + style.cardPadding.bottom) : (style.contentPadding * 2);
+  const effectiveContentPadding = Math.max(verticalPadding / 2, 24); // Fallback logic kept for safety
+  
   const hasFooter = style.pageNumber.enabled || style.watermark.enabled;
   const footerHeight = hasFooter ? 44 : 12; 
   
   // Scale maxContentHeight according to the ratio of actual width to base width if needed,
   // but for most cases, we want the pagination to be consistent.
-  const maxContentHeight = height - (style.padding * 2) - (effectiveContentPadding * 2) - footerHeight;
+  const maxContentHeight = height - (style.padding * 2) - verticalPadding - footerHeight;
 
   // 1. Clean existing pagination markers
   const cleanedMarkdown = markdown.split(/\n\s*---\s*\n|^\s*---\s*$/m).join('\n\n');
