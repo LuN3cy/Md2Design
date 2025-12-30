@@ -1423,7 +1423,7 @@ export const Sidebar = () => {
                    )}
                 </div>
 
-                <SliderControl label="文本字号" value={cardStyle.fontSize} min={12} max={64} onChange={(val) => updateCardStyle({ fontSize: val })} />
+                <SliderControl label="文本字号" value={cardStyle.fontSize} min={12} max={96} onChange={(val) => updateCardStyle({ fontSize: val })} />
                 
                 <div className="grid grid-cols-3 gap-3 mb-4">
                   <SliderControl label="H1 字号" value={cardStyle.h1FontSize} min={16} max={48} onChange={(val) => updateCardStyle({ h1FontSize: val })} />
@@ -1480,7 +1480,7 @@ export const Sidebar = () => {
                         </div>
 
                         <SliderControl label={t.opacity} value={cardStyle.watermark.opacity} min={0} max={1} step={0.05} onChange={(val) => updateCardStyle({ watermark: { ...cardStyle.watermark, opacity: val } })} />
-                        <SliderControl label={t.fontSize} value={cardStyle.watermark.fontSize} min={6} max={24} step={1} onChange={(val) => updateCardStyle({ watermark: { ...cardStyle.watermark, fontSize: val } })} />
+                        <SliderControl label={t.fontSize} value={cardStyle.watermark.fontSize} min={6} max={64} step={1} onChange={(val) => updateCardStyle({ watermark: { ...cardStyle.watermark, fontSize: val } })} />
                       </div>
                     )}
                  </div>
@@ -1515,7 +1515,7 @@ export const Sidebar = () => {
                         </div>
 
                         <SliderControl label={t.opacity} value={cardStyle.pageNumber.opacity} min={0} max={1} step={0.05} onChange={(val) => updateCardStyle({ pageNumber: { ...cardStyle.pageNumber, opacity: val } })} />
-                        <SliderControl label={t.fontSize} value={cardStyle.pageNumber.fontSize} min={6} max={24} step={1} onChange={(val) => updateCardStyle({ pageNumber: { ...cardStyle.pageNumber, fontSize: val } })} />
+                        <SliderControl label={t.fontSize} value={cardStyle.pageNumber.fontSize} min={6} max={64} step={1} onChange={(val) => updateCardStyle({ pageNumber: { ...cardStyle.pageNumber, fontSize: val } })} />
                       </div>
                     )}
                  </div>

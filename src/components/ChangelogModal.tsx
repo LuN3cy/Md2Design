@@ -481,7 +481,7 @@ const DemoFooterCustomization = () => {
               <span>{activeTab === 'pageNumber' ? pageNumber.fontSize : watermark.fontSize}px</span>
             </div>
             <input 
-              type="range" min="6" max="24" 
+              type="range" min="6" max="64" 
               value={activeTab === 'pageNumber' ? pageNumber.fontSize : watermark.fontSize} 
               onChange={(e) => {
                 const val = parseInt(e.target.value);
