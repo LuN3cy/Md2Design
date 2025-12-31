@@ -53,7 +53,7 @@ export const Sidebar = () => {
   const [localFonts, setLocalFonts] = useState<LocalFont[]>([]);
 
   useEffect(() => {
-    fetch('/fonts.json')
+    fetch('fonts.json')
       .then(res => res.json())
       .then(data => {
         setLocalFonts(data);

@@ -13,7 +13,7 @@ function App() {
 
   // Initial font injection for all local preset fonts
   useEffect(() => {
-    fetch('/fonts.json')
+    fetch('fonts.json')
       .then(res => res.json())
       .then(fonts => {
         injectAllLocalFonts(fonts);

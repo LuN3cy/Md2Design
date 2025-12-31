@@ -46,6 +46,7 @@ function generateFontsJson() {
 }
 
 export default defineConfig({
+  base: './',
   plugins: [react(), tailwindcss(), generateFontsJson()],
   server: {
     host: true,

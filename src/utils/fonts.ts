@@ -17,7 +17,7 @@ export const injectLocalFontFace = (name: string, filename: string) => {
   style.innerHTML = `
     @font-face {
       font-family: "${name}";
-      src: url("/fonts/${filename}") format("${format}");
+      src: url("fonts/${filename}") format("${format}");
       font-weight: 400;
       font-style: normal;
       font-display: swap;
