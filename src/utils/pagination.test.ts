@@ -24,4 +24,10 @@ describe('Pagination Utility', () => {
     const pages = paginateMarkdown(longContent, { ...defaultStyle, height: 400 });
     expect(pages.length).toBeGreaterThan(1);
   });
+
+  it('should handle tables correctly', () => {
+    const tableContent = Array(50).fill('| Cell 1 | Cell 2 |').join('\n');
+    const pages = paginateMarkdown(tableContent, { ...defaultStyle, height: 400 });
+    expect(pages.length).toBeGreaterThan(1);
+  });
 });

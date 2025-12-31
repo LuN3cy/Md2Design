@@ -53,10 +53,21 @@ const estimateLineHeight = (line: string, nextLine: string | undefined, style: C
     return (wrapLines * fontSize * lineHeight) + mb;
   }
 
+  // Table
+  if (trimmedLine.startsWith('|')) {
+    const wrapLines = Math.max(1, Math.ceil(line.length / charsPerLine));
+    return (wrapLines * fontSize * lineHeight) + 8; // Extra for cell padding
+  }
+
+  // Code Block start/end
+  if (trimmedLine.startsWith('```')) {
+    return 20; // Padding for code block container
+  }
+
   // Regular Paragraph line
   const wrapLines = Math.max(1, Math.ceil(line.length / charsPerLine));
   const nextIsEmpty = !nextLine || nextLine.trim() === '';
-  const nextIsSpecial = nextLine && (nextLine.startsWith('#') || nextLine.startsWith('>') || nextLine.startsWith('-') || nextLine.startsWith('*'));
+  const nextIsSpecial = nextLine && (nextLine.startsWith('#') || nextLine.startsWith('>') || nextLine.startsWith('-') || nextLine.startsWith('*') || nextLine.startsWith('|'));
   const mb = (nextIsEmpty || nextIsSpecial) ? 8 : 0;
   
   return (wrapLines * fontSize * lineHeight) + mb;

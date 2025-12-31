@@ -168,7 +168,7 @@ const Card = ({
   selectedImageId: string | null,
   setSelectedImageId: (id: string | null) => void
 }) => {
-  const { cardStyle, cardImages, updateCardImage, removeCardImage, isResetting } = useStore();
+  const { cardStyle, cardImages, updateCardImage, removeCardImage, isResetting, isExporting } = useStore();
   
   // Dynamic styles based on settings
   const outerStyle = {
@@ -310,7 +310,7 @@ const Card = ({
           >
             {renderInnerBackground()}
             
-            {isVisible ? (
+            {isVisible || isExporting ? (
               <>
                 {/* Background gradients or patterns based on template */}
                 {cardStyle.template === 'default' && (

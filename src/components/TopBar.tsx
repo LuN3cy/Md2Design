@@ -11,7 +11,7 @@ import { ChangelogModal } from './ChangelogModal';
 import logoSvg from '../assets/logo.svg';
 
 export const TopBar = () => {
-  const { theme, toggleTheme, toggleLanguage, isScrolled, previewZoom, setPreviewZoom } = useStore();
+  const { theme, toggleTheme, toggleLanguage, isScrolled, previewZoom, setPreviewZoom, isExporting, setIsExporting } = useStore();
   const t = useTranslation();
   const [showContact, setShowContact] = useState(false);
   const [showExport, setShowExport] = useState(false);
@@ -20,7 +20,6 @@ export const TopBar = () => {
 
   // Onboarding tooltip logic
   useEffect(() => {
-    console.log('Onboarding will show in 1.5s...');
     const timer = setTimeout(() => {
       setShowOnboarding(true);
     }, 1500);
@@ -158,9 +157,7 @@ export const TopBar = () => {
     return parts.filter(Boolean).join('_');
   };
 
-  const [isExporting, setIsExporting] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [progress, setProgress] = useState(0);  const [showSuccess, setShowSuccess] = useState(false);
   const [previewSize, setPreviewSize] = useState<{ single: string, total: string }>({ single: '-', total: '-' });
 
   // Calculate size estimation
@@ -210,6 +207,7 @@ export const TopBar = () => {
 
   const handleExport = async () => {
     setIsExporting(true);
+    setIsExporting(true); // Redundant for clarity or just once is enough
     setProgress(0);
     try {
         const cards = Array.from(document.querySelectorAll('[id^="card-"]')) as HTMLElement[];

@@ -184,6 +184,9 @@ interface AppState {
   setIsEditorOpen: (isOpen: boolean) => void;
   isSidebarOpen: boolean;
   setIsSidebarOpen: (isOpen: boolean) => void;
+
+  isExporting: boolean;
+  setIsExporting: (isExporting: boolean) => void;
 }
 
 export const PRESET_GRADIENTS = [
@@ -499,6 +502,9 @@ export const useStore = create<AppState>()(
   setIsEditorOpen: (isOpen) => set({ isEditorOpen: isOpen }),
   isSidebarOpen: true,
   setIsSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
+
+  isExporting: false,
+  setIsExporting: (isExporting) => set({ isExporting }),
     }),
     {
       name: 'md2card-storage',
