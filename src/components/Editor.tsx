@@ -87,26 +87,71 @@ export const Editor = () => {
     let lineEnd = markdown.indexOf('\n', end);
     if (lineEnd === -1) lineEnd = markdown.length;
     
-    const lineContent = markdown.substring(lineStart, lineEnd);
+    const blockContent = markdown.substring(lineStart, lineEnd);
+    const lines = blockContent.split('\n');
     const markerWithSpace = marker + ' ';
     
-    if (lineContent.startsWith(markerWithSpace)) {
-        // Remove
-        const clean = lineContent.substring(markerWithSpace.length);
-        const newText = markdown.substring(0, lineStart) + clean + markdown.substring(lineEnd);
-        setMarkdown(newText);
-        setTimeout(() => {
-            textarea.focus();
-            textarea.setSelectionRange(start - markerWithSpace.length, end - markerWithSpace.length);
-        }, 0);
+    // Determine if we should add or remove
+    // If all lines already start with the marker, we remove it
+    // Otherwise, we add it to lines that don't have it
+    const allHaveMarker = lines.every(line => line.trim() === '' || line.startsWith(markerWithSpace));
+    
+    let newLines: string[];
+ 
+    if (allHaveMarker) {
+      // Remove marker from all lines that have it
+      newLines = lines.map((line) => {
+        if (line.startsWith(markerWithSpace)) {
+          return line.substring(markerWithSpace.length);
+        }
+        return line;
+      });
     } else {
-        const newText = markdown.substring(0, lineStart) + markerWithSpace + lineContent + markdown.substring(lineEnd);
-        setMarkdown(newText);
-        setTimeout(() => {
-            textarea.focus();
-            textarea.setSelectionRange(start + markerWithSpace.length, end + markerWithSpace.length);
-        }, 0);
+      // Add marker to all lines
+      newLines = lines.map((line) => {
+        return markerWithSpace + line;
+      });
     }
+
+    const newBlockContent = newLines.join('\n');
+    const newText = markdown.substring(0, lineStart) + newBlockContent + markdown.substring(lineEnd);
+    
+    setMarkdown(newText);
+    
+    // Calculate new selection
+    setTimeout(() => {
+      textarea.focus();
+      
+      // Re-calculate start and end based on how many markers were added/removed before them
+      let newStart = start;
+      let newEnd = end;
+      
+      if (allHaveMarker) {
+        // Removing
+        lines.forEach((line, idx) => {
+          const lineAbsoluteStart = lineStart + lines.slice(0, idx).join('\n').length + (idx > 0 ? 1 : 0);
+          if (lineAbsoluteStart < start && line.startsWith(markerWithSpace)) {
+            newStart -= markerWithSpace.length;
+          }
+          if (lineAbsoluteStart < end && line.startsWith(markerWithSpace)) {
+            newEnd -= markerWithSpace.length;
+          }
+        });
+      } else {
+        // Adding
+        lines.forEach((_, idx) => {
+          const lineAbsoluteStart = lineStart + lines.slice(0, idx).join('\n').length + (idx > 0 ? 1 : 0);
+          if (lineAbsoluteStart <= start) {
+            newStart += markerWithSpace.length;
+          }
+          if (lineAbsoluteStart <= end) {
+            newEnd += markerWithSpace.length;
+          }
+        });
+      }
+      
+      textarea.setSelectionRange(newStart, newEnd);
+    }, 0);
   };
 
   const handleImageUpload = (file: File) => {

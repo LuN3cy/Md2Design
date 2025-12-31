@@ -3,12 +3,140 @@ import { createPortal } from 'react-dom';
 import { useStore, PRESET_GRADIENTS } from '../store';
 import { useTranslation } from '../i18n';
 import type { CardStyle, StylePreset, CustomFont } from '../store';
-import { Palette, Type, Layout, Monitor, ChevronRight, ChevronLeft, Smartphone, Monitor as MonitorIcon, Plus, Image as ImageIcon, RotateCcw, Stamp, Upload, Trash2, LayoutPanelTop, Maximize2, X } from 'lucide-react';
+import { Palette, Type, Layout, Monitor, ChevronRight, ChevronLeft, Smartphone, Monitor as MonitorIcon, Plus, Image as ImageIcon, RotateCcw, Stamp, Upload, Trash2, LayoutPanelTop, Maximize2, X, Square, Frame } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HexColorPicker } from 'react-colorful';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
+
+const MarginIcon = ({ side }: { side: 'top' | 'right' | 'bottom' | 'left' | 'all' }) => {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-70">
+      <rect x="2.5" y="2.5" width="9" height="9" rx="1" stroke="currentColor" strokeOpacity="0.3" strokeDasharray="2 2" />
+      {side === 'top' && <path d="M3 2H11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />}
+      {side === 'bottom' && <path d="M3 12H11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />}
+      {side === 'left' && <path d="M2 3V11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />}
+      {side === 'right' && <path d="M12 3V11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />}
+      {side === 'all' && <rect x="2.5" y="2.5" width="9" height="9" rx="1" stroke="currentColor" strokeWidth="1.5" />}
+    </svg>
+  );
+};
+
+const ParameterIcon = ({ type }: { type: 'radius' | 'width' | 'border' | 'x' | 'y' | 'blur' | 'spread' | 'opacity' | 'angle' | 'scale' | 'fontSize' }) => {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-70">
+      <rect x="0.5" y="0.5" width="13" height="13" rx="2" stroke="currentColor" strokeOpacity="0.5" />
+      {type === 'radius' && <path d="M4 4H7C8.65685 4 10 5.34315 10 7V10" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />}
+      
+      {type === 'width' && <path d="M3 7H11M3 7L5 5M3 7L5 9M11 7L9 5M11 7L9 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />}
+      
+      {type === 'border' && <rect x="3" y="3" width="8" height="8" rx="1" stroke="currentColor" strokeWidth="1.5" />}
+      
+      {type === 'x' && <path d="M3 7H11M11 7L9 5M11 7L9 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />}
+      {type === 'y' && <path d="M7 3V11M7 11L5 9M7 11L9 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />}
+      
+      {type === 'blur' && <circle cx="7" cy="7" r="3" fill="currentColor" fillOpacity="0.5" style={{ filter: 'blur(1px)' }} />}
+      
+      {type === 'spread' && <rect x="3" y="3" width="8" height="8" rx="1" stroke="currentColor" strokeWidth="1" strokeDasharray="2 2" />}
+      
+      {type === 'opacity' && <path d="M7 1V13M7 13C3.68629 13 1 10.3137 1 7C1 3.68629 3.68629 1 7 1V13Z" fill="currentColor" fillOpacity="0.5" />}
+      
+      {type === 'angle' && <path d="M7 3C9.20914 3 11 4.79086 11 7C11 9.20914 9.20914 11 7 11M7 3V7H11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />}
+      
+      {type === 'scale' && <path d="M4 10L10 4M10 4H7M10 4V7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />}
+      
+      {type === 'fontSize' && <path d="M4 10L7 4L10 10M5.5 8H8.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />}
+    </svg>
+  );
+};
+
+const DraggableNumberInput = ({ 
+  value, 
+  onChange, 
+  min = 0, 
+  max = 200, 
+  step = 1,
+  icon,
+  label
+}: { 
+  value: number, 
+  onChange: (val: number) => void, 
+  min?: number, 
+  max?: number, 
+  step?: number,
+  icon: React.ReactNode,
+  label?: string
+}) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const startX = useRef(0);
+  const startValue = useRef(0);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      const delta = e.clientX - startX.current;
+      // Adjust sensitivity based on step
+      const sensitivity = step < 1 ? 0.01 : 0.5;
+      const change = delta * sensitivity;
+      const rawValue = startValue.current + change;
+      
+      // Snap to step
+      const steppedValue = Math.round(rawValue / step) * step;
+      const newValue = Math.max(min, Math.min(max, steppedValue));
+      
+      // Handle precision issues for float steps
+      const finalValue = parseFloat(newValue.toFixed(step < 1 ? 2 : 0));
+      onChange(finalValue);
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      document.body.style.cursor = '';
+    };
+
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'ew-resize';
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+    };
+  }, [isDragging, min, max, step, onChange]);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    startX.current = e.clientX;
+    startValue.current = value;
+  };
+
+  return (
+    <div className="space-y-1.5 flex-1">
+      {label && (
+        <div className="flex items-center justify-between px-0.5">
+          <span className="text-[10px] font-bold opacity-40 uppercase tracking-wider">{label}</span>
+        </div>
+      )}
+      <div 
+        className={`relative group flex items-center bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg overflow-hidden cursor-ew-resize transition-colors hover:bg-black/10 dark:hover:bg-white/10 ${isDragging ? 'bg-black/10 dark:bg-white/10 ring-1 ring-blue-500/50' : ''}`}
+        onMouseDown={handleMouseDown}
+        title="Drag left/right to adjust"
+      >
+        <div className="pl-3 pr-2 text-slate-500 dark:text-slate-400 group-hover:text-slate-800 dark:group-hover:text-slate-200 transition-colors pointer-events-none">
+          {icon}
+        </div>
+        <div className="flex-1 py-2 pr-3 text-right font-mono text-xs font-medium select-none pointer-events-none">
+          {value}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const GradientPresets = ({ onSelect }: { onSelect: (start: string, end: string) => void }) => {
   return (
@@ -340,11 +468,10 @@ const PresetCard = ({
     borderWidth: `${style.borderWidth}px`,
     borderColor: style.borderColor,
     boxShadow: style.shadowEnabled ? style.shadow : 'none',
-    padding: '2rem',
-    paddingTop: 0,
-    paddingBottom: 0,
-    paddingLeft: 0,
-    paddingRight: 0,
+    paddingTop: `${style.cardPadding?.top ?? style.contentPadding}px`,
+    paddingRight: `${style.cardPadding?.right ?? style.contentPadding}px`,
+    paddingBottom: `${style.cardPadding?.bottom ?? style.contentPadding}px`,
+    paddingLeft: `${style.cardPadding?.left ?? style.contentPadding}px`,
   };
 
   const renderOuterBackground = () => {
@@ -417,7 +544,7 @@ const PresetCard = ({
         )}
 
         <div className="relative z-10 h-full flex flex-col">
-          <div className="prose prose-sm max-w-none flex-1 p-8 overflow-hidden">
+          <div className="prose prose-sm max-w-none flex-1 overflow-hidden">
             <ReactMarkdown
               remarkPlugins={[remarkGfm, remarkBreaks]}
               components={{
@@ -525,10 +652,10 @@ const PresetCard = ({
           </div>
 
           <div
-            className="flex-shrink-0 w-full px-8 pb-4 pt-2 flex items-center relative font-mono uppercase tracking-widest pointer-events-none text-[10px] h-8"
+            className="flex-shrink-0 w-full pt-2 flex items-center relative font-mono uppercase tracking-widest pointer-events-none text-[10px] h-8"
             style={{ opacity: style.watermark.opacity ?? 0.6 }}
           >
-            <div className="absolute left-8 flex items-center gap-4">
+            <div className="absolute left-0 flex items-center gap-4">
               {style.pageNumber.enabled && style.pageNumber.position === 'left' && <span className="font-bold">{index + 1}</span>}
               {style.watermark.enabled && style.watermark.position === 'left' && <span>{style.watermark.content}</span>}
             </div>
@@ -538,39 +665,13 @@ const PresetCard = ({
               {style.watermark.enabled && style.watermark.position === 'center' && <span>{style.watermark.content}</span>}
             </div>
 
-            <div className="absolute right-8 flex items-center gap-4">
+            <div className="absolute right-0 flex items-center gap-4">
               {style.watermark.enabled && style.watermark.position === 'right' && <span>{style.watermark.content}</span>}
               {style.pageNumber.enabled && style.pageNumber.position === 'right' && <span className="font-bold">{index + 1}</span>}
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-};
-
-const SliderControl = ({ label, value, min, max, step = 1, onChange }: { label: string, value: number, min: number, max: number, step?: number, onChange: (val: number) => void }) => {
-  const cleanLabel = label.replace(/\s*\(px\)/i, '').replace(/\s*\(°\)/i, '');
-  
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-2">
-        <label className="text-xs font-medium opacity-70 block">{cleanLabel}</label>
-        <div className="flex items-center gap-1">
-          <span className="text-sm font-bold opacity-90 min-w-[2ch] text-right font-mono">{value}</span>
-          {label.includes('(px)') && <span className="text-[10px] opacity-40 font-mono">px</span>}
-          {label.includes('(°)') && <span className="text-[10px] opacity-40 font-mono">°</span>}
-        </div>
-      </div>
-      <input 
-        type="range" 
-        min={min} 
-        max={max} 
-        step={step}
-        value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="w-full accent-black/80 dark:accent-white/80 h-1.5 bg-black/10 dark:bg-white/10 rounded-lg appearance-none cursor-pointer"
-      />
     </div>
   );
 };
@@ -647,13 +748,13 @@ const ColorPicker = ({ color, onChange, label }: { color: string, onChange: (col
               type="text" 
               value={color.toUpperCase()} 
               onChange={(e) => onChange(e.target.value)}
-              className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-2 py-1.5 text-[10px] font-mono focus:outline-none focus:border-black/30 dark:focus:border-white/30 text-center"
+              className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-2 py-2 text-[10px] font-mono focus:outline-none focus:border-black/30 dark:focus:border-white/30 text-center"
             />
           </div>
           <button 
             ref={buttonRef}
             onClick={() => setIsOpen(!isOpen)}
-            className="w-7 h-7 rounded-full border border-black/20 dark:border-white/20 shadow-sm relative overflow-hidden transition-transform active:scale-95 flex-shrink-0"
+            className="w-8 h-8 rounded-full border border-black/20 dark:border-white/20 shadow-sm relative overflow-hidden transition-transform active:scale-95 flex-shrink-0"
             style={{ backgroundColor: color }}
           />
         </div>
@@ -856,7 +957,7 @@ export const Sidebar = () => {
                       }`}
                     >
                       {o === 'portrait' ? <Smartphone size={14} /> : o === 'landscape' ? <MonitorIcon size={14} /> : <Layout size={14} />}
-                      <span className="capitalize">{o === 'autoHeight' ? '自动高度' : t[o as keyof typeof t]}</span>
+                      <span className="capitalize">{o === 'autoHeight' ? t.autoHeight : (t as any)[o]}</span>
                     </button>
                   ))}
                 </div>
@@ -864,11 +965,12 @@ export const Sidebar = () => {
                 {/* Aspect Ratio */}
                 {cardStyle.autoHeight ? (
                     <div className="mb-4">
-                        <SliderControl 
-                            label="卡片宽度 (px)" 
+                        <label className="text-xs font-medium opacity-70 mb-2 block">卡片宽度 (px)</label>
+                        <DraggableNumberInput 
                             value={cardStyle.width} 
                             min={300} max={1200} 
                             onChange={(val) => updateCardStyle({ width: val })} 
+                            icon={<ParameterIcon type="width" />}
                         />
                     </div>
                 ) : (
@@ -921,33 +1023,93 @@ export const Sidebar = () => {
                 )}
 
                 {/* Border Radius */}
-                <SliderControl 
-                  label={`${t.cornerRadius} (px)`} 
-                  value={cardStyle.borderRadius} 
-                  min={0} max={48} 
-                  onChange={(val) => updateCardStyle({ borderRadius: val })} 
-                />
+                <div className="mb-4">
+                  <label className="text-xs font-medium opacity-70 mb-2 block">{t.cornerRadius} (px)</label>
+                  <DraggableNumberInput 
+                    value={cardStyle.borderRadius} 
+                    min={0} max={48} 
+                    onChange={(val) => updateCardStyle({ borderRadius: val })} 
+                    icon={<ParameterIcon type="radius" />}
+                    label={t.cornerRadius}
+                  />
+                </div>
 
-                <SliderControl 
-                  label="内边距 (px)"
-                  value={cardStyle.contentPadding} 
-                  min={0} max={100} 
-                  onChange={(val) => updateCardStyle({ contentPadding: val })} 
-                />
+                {/* Content Padding */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-medium opacity-70">{t.contentPadding}</label>
+                    <button 
+                      onClick={() => updateCardStyle({ cardPaddingSync: !cardStyle.cardPaddingSync })}
+                      className={`p-1.5 rounded-md transition-all hover:bg-black/5 dark:hover:bg-white/5 ${cardStyle.cardPaddingSync ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}
+                      title={t.paddingSync}
+                    >
+                      {cardStyle.cardPaddingSync ? <Square size={14} /> : <Frame size={14} />}
+                    </button>
+                  </div>
+
+                  {cardStyle.cardPaddingSync ? (
+                    <DraggableNumberInput 
+                      value={cardStyle.cardPadding?.top ?? cardStyle.contentPadding} 
+                      min={0} max={200} 
+                      onChange={(val) => updateCardStyle({ 
+                        cardPadding: { top: val, right: val, bottom: val, left: val } 
+                      })} 
+                      icon={<MarginIcon side="all" />}
+                      label={t.all}
+                    />
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                       <DraggableNumberInput 
+                         value={cardStyle.cardPadding?.top ?? cardStyle.contentPadding}
+                         onChange={(val) => updateCardStyle({ cardPadding: { ...(cardStyle.cardPadding || { top: cardStyle.contentPadding, right: cardStyle.contentPadding, bottom: cardStyle.contentPadding, left: cardStyle.contentPadding }), top: val } })}
+                         icon={<MarginIcon side="top" />}
+                         label={t.top}
+                       />
+                       <DraggableNumberInput 
+                         value={cardStyle.cardPadding?.right ?? cardStyle.contentPadding}
+                         onChange={(val) => updateCardStyle({ cardPadding: { ...(cardStyle.cardPadding || { top: cardStyle.contentPadding, right: cardStyle.contentPadding, bottom: cardStyle.contentPadding, left: cardStyle.contentPadding }), right: val } })}
+                         icon={<MarginIcon side="right" />}
+                         label={t.right}
+                       />
+                       <DraggableNumberInput 
+                         value={cardStyle.cardPadding?.bottom ?? cardStyle.contentPadding}
+                         onChange={(val) => updateCardStyle({ cardPadding: { ...(cardStyle.cardPadding || { top: cardStyle.contentPadding, right: cardStyle.contentPadding, bottom: cardStyle.contentPadding, left: cardStyle.contentPadding }), bottom: val } })}
+                         icon={<MarginIcon side="bottom" />}
+                         label={t.bottom}
+                       />
+                       <DraggableNumberInput 
+                         value={cardStyle.cardPadding?.left ?? cardStyle.contentPadding}
+                         onChange={(val) => updateCardStyle({ cardPadding: { ...(cardStyle.cardPadding || { top: cardStyle.contentPadding, right: cardStyle.contentPadding, bottom: cardStyle.contentPadding, left: cardStyle.contentPadding }), left: val } })}
+                         icon={<MarginIcon side="left" />}
+                         label={t.left}
+                       />
+                    </div>
+                  )}
+                </div>
                 
                 {/* Border */}
-                <div className="grid grid-cols-2 gap-4">
-                  <ColorPicker 
-                    label={t.border}
-                    color={cardStyle.borderColor} 
-                    onChange={(val) => updateCardStyle({ borderColor: val })} 
-                  />
-                  <SliderControl 
-                    label="Width (px)"
-                    value={cardStyle.borderWidth} 
-                    min={0} max={20} 
-                    onChange={(val) => updateCardStyle({ borderWidth: val })} 
-                  />
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-medium opacity-70">{t.border}</label>
+                    <label className="text-[10px] uppercase tracking-wider opacity-60">WIDTH (PX)</label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-[1.5]">
+                      <ColorPicker 
+                        color={cardStyle.borderColor} 
+                        onChange={(val) => updateCardStyle({ borderColor: val })} 
+                      />
+                    </div>
+                    <div className="flex-1">
+                       <DraggableNumberInput 
+                         value={cardStyle.borderWidth} 
+                         min={0} max={40} 
+                         onChange={(val) => updateCardStyle({ borderWidth: val })} 
+                         icon={<ParameterIcon type="border" />}
+                         label={t.border}
+                       />
+                     </div>
+                  </div>
                 </div>
 
                 {/* Shadow */}
@@ -965,13 +1127,25 @@ export const Sidebar = () => {
                   {cardStyle.shadowEnabled && (
                     <div className="space-y-3 p-3 bg-black/5 dark:bg-white/5 rounded-lg border border-black/5 dark:border-white/5">
                       <div className="grid grid-cols-2 gap-3">
-                        <SliderControl label={t.xOffset} value={cardStyle.shadowConfig?.x ?? 0} min={-50} max={50} onChange={(val) => updateCardStyle({ shadowConfig: { ...cardStyle.shadowConfig, x: val } })} />
-                        <SliderControl label={t.yOffset} value={cardStyle.shadowConfig?.y ?? 0} min={-50} max={50} onChange={(val) => updateCardStyle({ shadowConfig: { ...cardStyle.shadowConfig, y: val } })} />
+                        <div>
+                          <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.xOffset}</label>
+                          <DraggableNumberInput value={cardStyle.shadowConfig?.x ?? 0} min={-50} max={50} onChange={(val) => updateCardStyle({ shadowConfig: { ...cardStyle.shadowConfig, x: val } })} icon={<ParameterIcon type="x" />} />
+                        </div>
+                        <div>
+                          <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.yOffset}</label>
+                          <DraggableNumberInput value={cardStyle.shadowConfig?.y ?? 0} min={-50} max={50} onChange={(val) => updateCardStyle({ shadowConfig: { ...cardStyle.shadowConfig, y: val } })} icon={<ParameterIcon type="y" />} />
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
-                         <SliderControl label={t.blur} value={cardStyle.shadowConfig?.blur ?? 0} min={0} max={100} onChange={(val) => updateCardStyle({ shadowConfig: { ...cardStyle.shadowConfig, blur: val } })} />
-                         <SliderControl label={t.spread} value={cardStyle.shadowConfig?.spread ?? 0} min={-50} max={50} onChange={(val) => updateCardStyle({ shadowConfig: { ...cardStyle.shadowConfig, spread: val } })} />
+                        <div>
+                          <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.blur}</label>
+                          <DraggableNumberInput value={cardStyle.shadowConfig?.blur ?? 0} min={0} max={100} onChange={(val) => updateCardStyle({ shadowConfig: { ...cardStyle.shadowConfig, blur: val } })} icon={<ParameterIcon type="blur" />} />
+                        </div>
+                        <div>
+                          <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.spread}</label>
+                          <DraggableNumberInput value={cardStyle.shadowConfig?.spread ?? 0} min={-50} max={50} onChange={(val) => updateCardStyle({ shadowConfig: { ...cardStyle.shadowConfig, spread: val } })} icon={<ParameterIcon type="spread" />} />
+                        </div>
                       </div>
 
                       <ColorPicker 
@@ -980,7 +1154,10 @@ export const Sidebar = () => {
                         onChange={(val) => updateCardStyle({ shadowConfig: { ...cardStyle.shadowConfig, color: val } })}
                       />
                       
-                      <SliderControl label={t.opacity} value={cardStyle.shadowConfig?.opacity ?? 0} min={0} max={1} step={0.01} onChange={(val) => updateCardStyle({ shadowConfig: { ...cardStyle.shadowConfig, opacity: val } })} />
+                      <div>
+                        <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.opacity}</label>
+                        <DraggableNumberInput value={cardStyle.shadowConfig?.opacity ?? 0} min={0} max={1} step={0.01} onChange={(val) => updateCardStyle({ shadowConfig: { ...cardStyle.shadowConfig, opacity: val } })} icon={<ParameterIcon type="opacity" />} />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1062,15 +1239,18 @@ export const Sidebar = () => {
                           }}
                         />
 
-                        <SliderControl label={`${t.angle} (°)`} value={cardStyle.gradientAngle || 135} min={0} max={360} onChange={(val) => {
-                           const angle = val;
-                           const start = cardStyle.gradientStart || '#667eea';
-                           const end = cardStyle.gradientEnd || '#764ba2';
-                           updateCardStyle({ 
-                             gradientAngle: angle,
-                             backgroundValue: `linear-gradient(${angle}deg, ${start} 0%, ${end} 100%)` 
-                           });
-                         }} />
+                        <div>
+                          <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.angle} (°)</label>
+                          <DraggableNumberInput value={cardStyle.gradientAngle || 135} min={0} max={360} onChange={(val) => {
+                            const angle = val;
+                            const start = cardStyle.gradientStart || '#667eea';
+                            const end = cardStyle.gradientEnd || '#764ba2';
+                            updateCardStyle({ 
+                              gradientAngle: angle,
+                              backgroundValue: `linear-gradient(${angle}deg, ${start} 0%, ${end} 100%)` 
+                            });
+                          }} icon={<ParameterIcon type="angle" />} />
+                        </div>
                       </div>
                     )}
 
@@ -1095,17 +1275,32 @@ export const Sidebar = () => {
                              </div>
                              
                              <div className="grid grid-cols-2 gap-3">
-                               <SliderControl label="X Offset" value={cardStyle.backgroundConfig?.x || 0} min={-100} max={100} onChange={(val) => updateCardStyle({ backgroundConfig: { ...cardStyle.backgroundConfig, x: val } })} />
-                               <SliderControl label="Y Offset" value={cardStyle.backgroundConfig?.y || 0} min={-100} max={100} onChange={(val) => updateCardStyle({ backgroundConfig: { ...cardStyle.backgroundConfig, y: val } })} />
+                               <div>
+                                 <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">X Offset</label>
+                                 <DraggableNumberInput value={cardStyle.backgroundConfig?.x || 0} min={-100} max={100} onChange={(val) => updateCardStyle({ backgroundConfig: { ...cardStyle.backgroundConfig, x: val } })} icon={<ParameterIcon type="x" />} />
+                               </div>
+                               <div>
+                                 <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">Y Offset</label>
+                                 <DraggableNumberInput value={cardStyle.backgroundConfig?.y || 0} min={-100} max={100} onChange={(val) => updateCardStyle({ backgroundConfig: { ...cardStyle.backgroundConfig, y: val } })} icon={<ParameterIcon type="y" />} />
+                               </div>
                              </div>
-                             <SliderControl label={t.scale} value={cardStyle.backgroundConfig?.scale || 1} min={0.1} max={3} step={0.1} onChange={(val) => updateCardStyle({ backgroundConfig: { ...cardStyle.backgroundConfig, scale: val } })} />
-                             <SliderControl label={t.blur} value={cardStyle.backgroundConfig?.blur || 0} min={0} max={20} onChange={(val) => updateCardStyle({ backgroundConfig: { ...cardStyle.backgroundConfig, blur: val } })} />
+                             <div>
+                               <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.scale}</label>
+                               <DraggableNumberInput value={cardStyle.backgroundConfig?.scale || 1} min={0.1} max={3} step={0.1} onChange={(val) => updateCardStyle({ backgroundConfig: { ...cardStyle.backgroundConfig, scale: val } })} icon={<ParameterIcon type="scale" />} />
+                             </div>
+                             <div>
+                               <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.blur}</label>
+                               <DraggableNumberInput value={cardStyle.backgroundConfig?.blur || 0} min={0} max={20} onChange={(val) => updateCardStyle({ backgroundConfig: { ...cardStyle.backgroundConfig, blur: val } })} icon={<ParameterIcon type="blur" />} />
+                             </div>
                            </div>
                          )}
                        </div>
                     )}
 
-                    <SliderControl label={t.padding} value={cardStyle.padding} min={0} max={100} onChange={(val) => updateCardStyle({ padding: val })} />
+                    <div>
+                      <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.padding}</label>
+                      <DraggableNumberInput value={cardStyle.padding} min={0} max={100} onChange={(val) => updateCardStyle({ padding: val })} icon={<ParameterIcon type="radius" />} />
+                    </div>
                   </div>
                 )}
               </div>
@@ -1176,15 +1371,18 @@ export const Sidebar = () => {
                             });
                           }}
                         />
-                        <SliderControl label={`${t.angle} (°)`} value={cardStyle.cardGradientAngle || 135} min={0} max={360} onChange={(val) => {
-                           const angle = val;
-                           const start = cardStyle.cardGradientStart || '#ffffff';
-                           const end = cardStyle.cardGradientEnd || '#f0f0f0';
-                           updateCardStyle({ 
-                             cardGradientAngle: angle,
-                             cardGradientValue: `linear-gradient(${angle}deg, ${start} 0%, ${end} 100%)` 
-                           });
-                         }} />
+                        <div>
+                          <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.angle} (°)</label>
+                          <DraggableNumberInput value={cardStyle.cardGradientAngle || 135} min={0} max={360} onChange={(val) => {
+                            const angle = val;
+                            const start = cardStyle.cardGradientStart || '#ffffff';
+                            const end = cardStyle.cardGradientEnd || '#f0f0f0';
+                            updateCardStyle({ 
+                              cardGradientAngle: angle,
+                              cardGradientValue: `linear-gradient(${angle}deg, ${start} 0%, ${end} 100%)` 
+                            });
+                          }} icon={<ParameterIcon type="angle" />} />
+                        </div>
                       </div>
                     )}
 
@@ -1209,11 +1407,23 @@ export const Sidebar = () => {
                              </div>
                              
                              <div className="grid grid-cols-2 gap-3">
-                               <SliderControl label="X Offset" value={cardStyle.cardBackgroundConfig?.x || 0} min={-100} max={100} step={0.1} onChange={(val) => updateCardStyle({ cardBackgroundConfig: { ...cardStyle.cardBackgroundConfig, x: val } })} />
-                               <SliderControl label="Y Offset" value={cardStyle.cardBackgroundConfig?.y || 0} min={-100} max={100} step={0.1} onChange={(val) => updateCardStyle({ cardBackgroundConfig: { ...cardStyle.cardBackgroundConfig, y: val } })} />
+                               <div>
+                                 <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">X Offset</label>
+                                 <DraggableNumberInput value={cardStyle.cardBackgroundConfig?.x || 0} min={-100} max={100} step={0.1} onChange={(val) => updateCardStyle({ cardBackgroundConfig: { ...cardStyle.cardBackgroundConfig, x: val } })} icon={<ParameterIcon type="x" />} />
+                               </div>
+                               <div>
+                                 <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">Y Offset</label>
+                                 <DraggableNumberInput value={cardStyle.cardBackgroundConfig?.y || 0} min={-100} max={100} step={0.1} onChange={(val) => updateCardStyle({ cardBackgroundConfig: { ...cardStyle.cardBackgroundConfig, y: val } })} icon={<ParameterIcon type="y" />} />
+                               </div>
                              </div>
-                             <SliderControl label={t.scale} value={cardStyle.cardBackgroundConfig?.scale || 1} min={0.1} max={3} step={0.01} onChange={(val) => updateCardStyle({ cardBackgroundConfig: { ...cardStyle.cardBackgroundConfig, scale: val } })} />
-                             <SliderControl label={t.blur} value={cardStyle.cardBackgroundConfig?.blur || 0} min={0} max={20} step={0.1} onChange={(val) => updateCardStyle({ cardBackgroundConfig: { ...cardStyle.cardBackgroundConfig, blur: val } })} />
+                             <div>
+                               <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.scale}</label>
+                               <DraggableNumberInput value={cardStyle.cardBackgroundConfig?.scale || 1} min={0.1} max={3} step={0.01} onChange={(val) => updateCardStyle({ cardBackgroundConfig: { ...cardStyle.cardBackgroundConfig, scale: val } })} icon={<ParameterIcon type="scale" />} />
+                             </div>
+                             <div>
+                               <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.blur}</label>
+                               <DraggableNumberInput value={cardStyle.cardBackgroundConfig?.blur || 0} min={0} max={20} step={0.1} onChange={(val) => updateCardStyle({ cardBackgroundConfig: { ...cardStyle.cardBackgroundConfig, blur: val } })} icon={<ParameterIcon type="blur" />} />
+                             </div>
                            </div>
                          )}
                        </div>
@@ -1423,15 +1633,30 @@ export const Sidebar = () => {
                    )}
                 </div>
 
-                <SliderControl label="文本字号" value={cardStyle.fontSize} min={12} max={64} onChange={(val) => updateCardStyle({ fontSize: val })} />
+                <div className="mb-4">
+                  <label className="text-xs font-medium opacity-70 mb-2 block">文本字号</label>
+                  <DraggableNumberInput value={cardStyle.fontSize} min={12} max={96} onChange={(val) => updateCardStyle({ fontSize: val })} icon={<ParameterIcon type="fontSize" />} />
+                </div>
                 
                 <div className="grid grid-cols-3 gap-3 mb-4">
-                  <SliderControl label="H1 字号" value={cardStyle.h1FontSize} min={16} max={48} onChange={(val) => updateCardStyle({ h1FontSize: val })} />
-                  <SliderControl label="H2 字号" value={cardStyle.h2FontSize} min={14} max={36} onChange={(val) => updateCardStyle({ h2FontSize: val })} />
-                  <SliderControl label="H3 字号" value={cardStyle.h3FontSize} min={12} max={24} onChange={(val) => updateCardStyle({ h3FontSize: val })} />
+                  <div>
+                    <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">H1 字号</label>
+                    <DraggableNumberInput value={cardStyle.h1FontSize} min={16} max={48} onChange={(val) => updateCardStyle({ h1FontSize: val })} icon={<ParameterIcon type="fontSize" />} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">H2 字号</label>
+                    <DraggableNumberInput value={cardStyle.h2FontSize} min={14} max={36} onChange={(val) => updateCardStyle({ h2FontSize: val })} icon={<ParameterIcon type="fontSize" />} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">H3 字号</label>
+                    <DraggableNumberInput value={cardStyle.h3FontSize} min={12} max={24} onChange={(val) => updateCardStyle({ h3FontSize: val })} icon={<ParameterIcon type="fontSize" />} />
+                  </div>
                 </div>
 
-                <SliderControl label={t.headingScale} value={cardStyle.headingScale} min={0.5} max={2.0} step={0.1} onChange={(val) => updateCardStyle({ headingScale: val })} />
+                <div>
+                  <label className="text-xs font-medium opacity-70 mb-2 block">{t.headingScale}</label>
+                  <DraggableNumberInput value={cardStyle.headingScale} min={0.5} max={2.0} step={0.1} onChange={(val) => updateCardStyle({ headingScale: val })} icon={<ParameterIcon type="fontSize" />} />
+                </div>
               </div>
 
               {/* Watermark & Page Number */}
@@ -1479,7 +1704,21 @@ export const Sidebar = () => {
                            </div>
                         </div>
 
-                        <SliderControl label={t.opacity} value={cardStyle.watermark.opacity} min={0} max={1} step={0.05} onChange={(val) => updateCardStyle({ watermark: { ...cardStyle.watermark, opacity: val } })} />
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.opacity}</label>
+                            <DraggableNumberInput value={cardStyle.watermark.opacity} min={0} max={1} step={0.05} onChange={(val) => updateCardStyle({ watermark: { ...cardStyle.watermark, opacity: val } })} icon={<ParameterIcon type="opacity" />} />
+                          </div>
+                          <div>
+                            <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.fontSize}</label>
+                            <DraggableNumberInput value={cardStyle.watermark.fontSize} min={6} max={64} step={1} onChange={(val) => updateCardStyle({ watermark: { ...cardStyle.watermark, fontSize: val } })} icon={<ParameterIcon type="fontSize" />} />
+                          </div>
+                        </div>
+                        <ColorPicker 
+                          label={t.text}
+                          color={cardStyle.watermark.color || cardStyle.textColor} 
+                          onChange={(val) => updateCardStyle({ watermark: { ...cardStyle.watermark, color: val } })} 
+                        />
                       </div>
                     )}
                  </div>
@@ -1512,6 +1751,22 @@ export const Sidebar = () => {
                              ))}
                            </div>
                         </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.opacity}</label>
+                            <DraggableNumberInput value={cardStyle.pageNumber.opacity} min={0} max={1} step={0.05} onChange={(val) => updateCardStyle({ pageNumber: { ...cardStyle.pageNumber, opacity: val } })} icon={<ParameterIcon type="opacity" />} />
+                          </div>
+                          <div>
+                            <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.fontSize}</label>
+                            <DraggableNumberInput value={cardStyle.pageNumber.fontSize} min={6} max={64} step={1} onChange={(val) => updateCardStyle({ pageNumber: { ...cardStyle.pageNumber, fontSize: val } })} icon={<ParameterIcon type="fontSize" />} />
+                          </div>
+                        </div>
+                        <ColorPicker 
+                          label={t.text}
+                          color={cardStyle.pageNumber.color || cardStyle.textColor} 
+                          onChange={(val) => updateCardStyle({ pageNumber: { ...cardStyle.pageNumber, color: val } })} 
+                        />
                       </div>
                     )}
                  </div>

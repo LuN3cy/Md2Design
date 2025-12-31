@@ -58,6 +58,13 @@ export type CardStyle = {
   
   padding: number;
   contentPadding: number;
+  cardPadding: {
+    top: number;
+    right: number;
+    bottom: number;
+    left: number;
+  };
+  cardPaddingSync: boolean;
 
   customCSS: string;
   template: 'default'; // Simplified to just default
@@ -114,12 +121,17 @@ export type CardStyle = {
     content: string;
     position: 'left' | 'center' | 'right';
     opacity: number;
+    fontSize: number;
+    color?: string;
   };
 
   // Page Number
   pageNumber: {
     enabled: boolean;
     position: 'left' | 'center' | 'right';
+    opacity: number;
+    fontSize: number;
+    color?: string;
   };
 };
 
@@ -249,6 +261,13 @@ const INITIAL_CARD_STYLE: CardStyle = {
   },
   padding: 40,
   contentPadding: 24,
+  cardPadding: {
+    top: 32,
+    right: 32,
+    bottom: 32,
+    left: 32
+  },
+  cardPaddingSync: true,
   customCSS: '',
       template: 'default',
       fontSize: 16,
@@ -293,11 +312,16 @@ const INITIAL_CARD_STYLE: CardStyle = {
     enabled: false,
     content: 'Md2Design',
     position: 'center',
-    opacity: 0.1
+    opacity: 0.5,
+    fontSize: 10,
+    color: '' // Empty means use default text color
   },
   pageNumber: {
     enabled: false,
-    position: 'center'
+    position: 'center',
+    opacity: 0.5,
+    fontSize: 10,
+    color: '' // Empty means use default text color
   }
 };
 
@@ -479,9 +503,9 @@ export const useStore = create<AppState>()(
     {
       name: 'md2card-storage',
       storage: createJSONStorage(() => localStorage),
-      version: 2,
+      version: 3,
       migrate: (persistedState: unknown, version: number) => {
-        const state = persistedState as AppState;
+        const state = persistedState as any;
         if (version === 0) {
           // Migration for v0 to v1: Add headingScale and contentPadding
           if (state.cardStyle) {
@@ -501,6 +525,21 @@ export const useStore = create<AppState>()(
               h1FontSize: state.cardStyle.h1FontSize ?? 32,
               h2FontSize: state.cardStyle.h2FontSize ?? 24,
               h3FontSize: state.cardStyle.h3FontSize ?? 20,
+            };
+          }
+        }
+        if (version <= 2) {
+          // Migration for v2 to v3: Add cardPadding and cardPaddingSync
+          if (state.cardStyle) {
+            state.cardStyle = {
+              ...state.cardStyle,
+              cardPadding: state.cardStyle.cardPadding ?? {
+                top: state.cardStyle.contentPadding ?? 32,
+                right: state.cardStyle.contentPadding ?? 32,
+                bottom: state.cardStyle.contentPadding ?? 32,
+                left: state.cardStyle.contentPadding ?? 32
+              },
+              cardPaddingSync: state.cardStyle.cardPaddingSync ?? true,
             };
           }
         }

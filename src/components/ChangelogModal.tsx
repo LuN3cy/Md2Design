@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, CheckCircle2, Sparkles, Monitor, ChevronRight, RotateCcw, Plus, Image as ImageIcon, Trash2, Maximize2, MessageSquare, ChevronDown, Check as CheckIcon, Layout } from 'lucide-react';
+import { X, CheckCircle2, Sparkles, Monitor, ChevronRight, RotateCcw, Plus, Image as ImageIcon, Trash2, Maximize2, MessageSquare, ChevronDown, Check as CheckIcon, Layout, List, Square, Frame } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import { useStore } from '../store';
 import ReactMarkdown from 'react-markdown';
@@ -20,16 +20,64 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
   // Update data
   const updates = useMemo(() => [
     {
+      version: 'v1.7.2',
+      date: '2025-12-31',
+      title: {
+        en: 'Interactive Controls & UI Polish',
+        zh: '交互式调节 & UI 细节打磨'
+      },
+      changes: {
+        en: [
+          'All-new Interaction: Numeric parameters now support direct drag-to-adjust on icons or values for a smoother experience.',
+          'Border Integration: Perfectly unified border color and width controls with a compact layout and increased max width of 40px.',
+          '4-Way Padding: Independent adjustment for top, right, bottom, and left padding of the card.',
+          'Icon Redesign: Redrawn all parameter icons inspired by Figma, ensuring clarity even at small scales.',
+        ],
+        zh: [
+          '全新交互：数值参数现在支持直接在图标或数值上左右滑动调节，操作更丝滑直观。',
+          '边框整合：将边框颜色选择与宽度调节完美整合，布局更紧凑，最大宽度提升至 40px。',
+          '四向内边距：支持对卡片的上下左右四个方向进行独立内边距调节。',
+          '图标重绘：参考 Figma 风格重绘了所有参数图标，在小尺寸下依然清晰可辨。',
+        ]
+      },
+      demo: 'v172-features'
+    },
+    {
+      version: 'v1.7.1',
+      date: '2025-12-30',
+      title: {
+        en: 'Enhanced Customization & Fixes',
+        zh: '水印字号调整 & 问题修复'
+      },
+      changes: {
+        en: [
+          'Added font size adjustment for page numbers and watermarks',
+          'Added opacity control for page numbers',
+          'Improved blockquote styling: removed extra top spacing',
+          'Enhanced editor: support for multi-line list selection and toggling',
+          'Integrated Tauri build into deployment process',
+        ],
+        zh: [
+          '新增页码和水印字号调整功能',
+          '新增页码不透明度调节功能',
+          '优化引用块样式：移除了顶部的多余空白',
+          '增强编辑器：支持多行列表的同时选择与切换',
+          '自动化部署：集成 Tauri 桌面端打包流程',
+        ]
+      },
+      demo: 'v171-features'
+    },
+    {
       version: 'v1.7.0',
       date: '2025-12-29',
       title: {
-        en: 'Smart Pagination & Auto Height',
-        zh: '智能自动分页 & 自动高度'
+        en: 'Smart Pagination & Long Image Mode',
+        zh: '智能自动分页 & 长图模式'
       },
       changes: {
         en: [
           'Added "Auto Pagination" star button to toolbar for one-click content splitting',
-          'New "Auto Height" mode allows cards to grow vertically based on content',
+          'New "Long Image" mode allows cards to grow vertically based on content',
           'Independent heading styles: customize font size and color for H1, H2, and H3',
           'Added preview zoom slider and support for Ctrl/Command+Scroll shortcut zoom',
           'Support for card padding adjustment',
@@ -39,7 +87,7 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
         ],
         zh: [
           '工具栏新增“自动分页”星形按钮，一键智能分割长文本',
-          '新增“自动高度”模式，卡片长度随内容自动增长',
+          '新增“长图”模式，卡片长度随内容自动增长',
           '标题样式独立化：支持为 H1、H2、H3 分别设置字号、颜色及装饰线',
           '新增预览窗口缩放滑条，同时支持 Ctrl/Command+滚轮的快捷缩放',
           '支持卡片内边距调整',
@@ -340,6 +388,22 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
                             </h3>
                          </div>
 
+                         {currentUpdate.demo === 'v172-features' && (
+                           <div className="bg-slate-100 dark:bg-[#0a0a0a] rounded-2xl p-6 md:p-8 border border-black/5 dark:border-white/10 shadow-inner min-h-[400px] flex flex-col items-center gap-12">
+                              <DemoSliderIntegration />
+                              <div className="w-full h-px bg-black/5 dark:bg-white/10" />
+                              <DemoPaddingCustomization />
+                           </div>
+                         )}
+
+                         {currentUpdate.demo === 'v171-features' && (
+                           <div className="bg-slate-100 dark:bg-[#0a0a0a] rounded-2xl p-6 md:p-8 border border-black/5 dark:border-white/10 shadow-inner min-h-[400px] flex flex-col items-center gap-12">
+                              <DemoFooterCustomization />
+                              <div className="w-full h-px bg-black/5 dark:bg-white/10" />
+                              <DemoMultiLineList />
+                           </div>
+                         )}
+
                          {currentUpdate.demo === 'v170-features' && (
                            <div className="bg-slate-100 dark:bg-[#0a0a0a] rounded-2xl p-6 md:p-8 border border-black/5 dark:border-white/10 shadow-inner min-h-[500px] flex flex-col items-center gap-12">
                               <DemoSmartPagination />
@@ -406,6 +470,425 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
         </motion.div>
       )}
     </AnimatePresence>
+  );
+};
+
+ const DraggableValue = ({ 
+  value, 
+  onChange, 
+  min = 0, 
+  max = 100, 
+  icon, 
+  label 
+}: { 
+  value: number, 
+  onChange: (v: number) => void, 
+  min?: number, 
+  max?: number, 
+  icon: React.ReactNode, 
+  label: string 
+}) => {
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    const startX = e.clientX;
+    const startValue = value;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      const newValue = Math.min(max, Math.max(min, startValue + Math.round(deltaX / 5)));
+      onChange(newValue);
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  return (
+    <div className="space-y-1.5 flex-1 min-w-[120px]">
+      <div className="flex items-center justify-between px-0.5">
+        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{label}</span>
+      </div>
+      <div 
+        onMouseDown={handleMouseDown}
+        className={`flex items-center gap-2 px-3 py-2 bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl cursor-ew-resize select-none transition-all ${isDragging ? 'border-blue-500 shadow-sm' : 'hover:border-black/20 dark:hover:border-white/20'}`}
+      >
+        <div className="text-slate-400 shrink-0">
+          {icon}
+        </div>
+        <div className="flex-1 text-sm font-mono font-bold text-slate-700 dark:text-slate-200">
+          {value}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const DemoSliderIntegration = () => {
+  const { language } = useStore();
+  const [radius, setRadius] = useState(16);
+  const [borderWidth, setBorderWidth] = useState(2);
+  const borderColor = '#3b82f6';
+
+  return (
+    <div className="w-full max-w-md space-y-8">
+      <div className="flex flex-col items-center gap-2">
+        <div className="px-3 py-1 bg-blue-500/10 text-blue-500 rounded-full text-[10px] font-bold uppercase tracking-widest">
+          {language === 'zh' ? '交互演示：无感滑动调节' : 'Demo: Seamless Drag Adjustment'}
+        </div>
+        <p className="text-xs text-slate-400 text-center">
+          {language === 'zh' ? '在数值区域左右拖拽，即可快速调整参数' : 'Drag left/right on values to adjust parameters'}
+        </p>
+      </div>
+
+      <div className="bg-white dark:bg-[#151515] p-6 rounded-3xl border border-black/5 dark:border-white/10 shadow-xl space-y-6">
+        <div className="flex flex-wrap gap-4">
+          <DraggableValue 
+            label={language === 'zh' ? '圆角' : 'Radius'}
+            value={radius} 
+            onChange={setRadius}
+            max={40}
+            icon={<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 7V3C2 2.44772 2.44772 2 3 2H7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><rect x="5" y="5" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.5"/></svg>}
+          />
+          <DraggableValue 
+            label={language === 'zh' ? '边框宽度' : 'Border'}
+            value={borderWidth} 
+            onChange={setBorderWidth}
+            max={40}
+            icon={<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2.5" y="2.5" width="9" height="9" rx="1" stroke="currentColor" strokeWidth="2"/></svg>}
+          />
+        </div>
+
+        <div className="aspect-video w-full rounded-2xl bg-slate-50 dark:bg-black/20 flex items-center justify-center p-8 overflow-hidden relative">
+          <motion.div 
+            animate={{ 
+              borderRadius: `${radius}px`,
+              borderWidth: `${borderWidth}px`
+            }}
+            style={{ borderColor: borderColor }}
+            className="w-full h-full bg-white dark:bg-[#202020] shadow-2xl flex items-center justify-center border-solid"
+          >
+            <div className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em]">
+              Preview
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const DemoPaddingCustomization = () => {
+  const { language } = useStore();
+  const [padding, setPadding] = useState({ top: 20, right: 20, bottom: 20, left: 20 });
+  const [isSynced, setIsSynced] = useState(true);
+
+  const updatePadding = (side: keyof typeof padding, val: number) => {
+    if (isSynced) {
+      setPadding({ top: val, right: val, bottom: val, left: val });
+    } else {
+      setPadding(prev => ({ ...prev, [side]: val }));
+    }
+  };
+
+  const PaddingIcon = ({ side }: { side: 'top' | 'right' | 'bottom' | 'left' | 'all' }) => (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-70">
+      <rect x="2.5" y="2.5" width="9" height="9" rx="1" stroke="currentColor" strokeOpacity="0.3" strokeDasharray="2 2" />
+      {side === 'top' && <path d="M3 2H11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />}
+      {side === 'bottom' && <path d="M3 12H11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />}
+      {side === 'left' && <path d="M2 3V11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />}
+      {side === 'right' && <path d="M12 3V11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />}
+      {side === 'all' && <rect x="2.5" y="2.5" width="9" height="9" rx="1" stroke="currentColor" strokeWidth="1.5" />}
+    </svg>
+  );
+
+  return (
+    <div className="w-full max-w-md space-y-8">
+      <div className="flex flex-col items-center gap-2">
+        <div className="px-3 py-1 bg-purple-500/10 text-purple-500 rounded-full text-[10px] font-bold uppercase tracking-widest">
+          {language === 'zh' ? '四向调节：精准控制间距' : '4-Way Control: Precise Spacing'}
+        </div>
+        <p className="text-xs text-slate-400 text-center">
+          {language === 'zh' ? '点击锁定按钮，可独立调节每个方向的边距' : 'Click the lock button to adjust each margin independently'}
+        </p>
+      </div>
+
+      <div className="bg-white dark:bg-[#151515] p-6 rounded-3xl border border-black/5 dark:border-white/10 shadow-xl space-y-6">
+        <div className="flex items-center justify-between px-1">
+          <div className="text-xs font-bold text-slate-500">{language === 'zh' ? '内边距' : 'Padding'}</div>
+          <button 
+            onClick={() => setIsSynced(!isSynced)}
+            className={`p-1.5 rounded-md transition-all hover:bg-black/5 dark:hover:bg-white/5 ${isSynced ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}
+          >
+            {isSynced ? <Square size={14} /> : <Frame size={14} />}
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          {isSynced ? (
+            <div className="col-span-2">
+              <DraggableValue 
+                label={language === 'zh' ? '全部' : 'All'}
+                value={padding.top} 
+                onChange={(v) => updatePadding('top', v)}
+                max={80}
+                icon={<PaddingIcon side="all" />}
+              />
+            </div>
+          ) : (
+            <>
+              <DraggableValue label={language === 'zh' ? '上方' : 'Top'} value={padding.top} onChange={(v) => updatePadding('top', v)} max={80} icon={<PaddingIcon side="top" />} />
+              <DraggableValue label={language === 'zh' ? '下方' : 'Bottom'} value={padding.bottom} onChange={(v) => updatePadding('bottom', v)} max={80} icon={<PaddingIcon side="bottom" />} />
+              <DraggableValue label={language === 'zh' ? '左侧' : 'Left'} value={padding.left} onChange={(v) => updatePadding('left', v)} max={80} icon={<PaddingIcon side="left" />} />
+              <DraggableValue label={language === 'zh' ? '右侧' : 'Right'} value={padding.right} onChange={(v) => updatePadding('right', v)} max={80} icon={<PaddingIcon side="right" />} />
+            </>
+          )}
+        </div>
+
+        <div className="aspect-video w-full rounded-2xl bg-slate-50 dark:bg-black/20 flex items-center justify-center p-4 overflow-hidden">
+          <div className="w-full h-full bg-blue-500/10 rounded-xl border border-dashed border-blue-500/30 flex items-center justify-center p-0">
+             <motion.div 
+               animate={{ 
+                 paddingTop: `${padding.top}px`,
+                 paddingRight: `${padding.right}px`,
+                 paddingBottom: `${padding.bottom}px`,
+                 paddingLeft: `${padding.left}px`,
+               }}
+               className="w-full h-full"
+             >
+                <div className="w-full h-full bg-white dark:bg-[#202020] shadow-lg rounded-lg flex flex-col gap-2 p-4">
+                  <div className="w-1/2 h-2 bg-blue-500/20 rounded-full" />
+                  <div className="w-full h-1.5 bg-slate-200 dark:bg-white/5 rounded-full" />
+                  <div className="w-5/6 h-1.5 bg-slate-200 dark:bg-white/5 rounded-full" />
+                </div>
+             </motion.div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+const DemoFooterCustomization = () => {
+  const { language } = useStore();
+  const [watermark, setWatermark] = useState({ fontSize: 10, opacity: 0.5, position: 'center' as 'left' | 'center' | 'right', color: '' });
+  const [pageNumber, setPageNumber] = useState({ fontSize: 10, opacity: 0.5, position: 'center' as 'left' | 'center' | 'right', color: '' });
+  const [activeTab, setActiveTab] = useState<'watermark' | 'pageNumber'>('pageNumber');
+
+  return (
+    <div className="w-full max-w-md space-y-6">
+      <div className="text-xs font-bold text-slate-400 uppercase text-center mb-2">
+        {language === 'zh' ? '页码 & 水印独立自定义' : 'Independent Footer Customization'}
+      </div>
+
+      <div className="bg-white dark:bg-[#151515] p-6 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm space-y-6">
+        {/* Tab Switcher */}
+        <div className="flex p-1 bg-black/5 dark:bg-white/5 rounded-xl">
+          <button
+            onClick={() => setActiveTab('pageNumber')}
+            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+              activeTab === 'pageNumber' ? 'bg-white dark:bg-white/10 text-blue-600 shadow-sm' : 'text-slate-400'
+            }`}
+          >
+            {language === 'zh' ? '页码设置' : 'Page Number'}
+          </button>
+          <button
+            onClick={() => setActiveTab('watermark')}
+            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+              activeTab === 'watermark' ? 'bg-white dark:bg-white/10 text-blue-600 shadow-sm' : 'text-slate-400'
+            }`}
+          >
+            {language === 'zh' ? '水印设置' : 'Watermark'}
+          </button>
+        </div>
+
+        {/* Active Tab Controls */}
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase">
+              <span>{language === 'zh' ? '字号' : 'Font Size'}</span>
+              <span>{activeTab === 'pageNumber' ? pageNumber.fontSize : watermark.fontSize}px</span>
+            </div>
+            <input 
+              type="range" min="6" max="64" 
+              value={activeTab === 'pageNumber' ? pageNumber.fontSize : watermark.fontSize} 
+              onChange={(e) => {
+                const val = parseInt(e.target.value);
+                if (activeTab === 'pageNumber') setPageNumber({ ...pageNumber, fontSize: val });
+                else setWatermark({ ...watermark, fontSize: val });
+              }}
+              className="w-full h-1.5 bg-black/5 dark:bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase">
+              <span>{language === 'zh' ? '不透明度' : 'Opacity'}</span>
+              <span>{Math.round((activeTab === 'pageNumber' ? pageNumber.opacity : watermark.opacity) * 100)}%</span>
+            </div>
+            <input 
+              type="range" min="0" max="1" step="0.05" 
+              value={activeTab === 'pageNumber' ? pageNumber.opacity : watermark.opacity} 
+              onChange={(e) => {
+                const val = parseFloat(e.target.value);
+                if (activeTab === 'pageNumber') setPageNumber({ ...pageNumber, opacity: val });
+                else setWatermark({ ...watermark, opacity: val });
+              }}
+              className="w-full h-1.5 bg-black/5 dark:bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <span className="text-[10px] font-bold text-slate-400 uppercase block">{language === 'zh' ? '位置' : 'Position'}</span>
+            <div className="flex bg-black/5 dark:bg-white/5 rounded-lg p-1">
+              {(['left', 'center', 'right'] as const).map((pos) => {
+                const isActive = (activeTab === 'pageNumber' ? pageNumber.position : watermark.position) === pos;
+                return (
+                  <button
+                    key={pos}
+                    onClick={() => {
+                      if (activeTab === 'pageNumber') setPageNumber({ ...pageNumber, position: pos });
+                      else setWatermark({ ...watermark, position: pos });
+                    }}
+                    className={`flex-1 py-1.5 text-[10px] font-bold rounded-md transition-all capitalize ${
+                      isActive ? 'bg-white dark:bg-white/10 text-blue-600 shadow-sm' : 'text-slate-400'
+                    }`}
+                  >
+                    {pos}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <span className="text-[10px] font-bold text-slate-400 uppercase block">{language === 'zh' ? '颜色' : 'Color'}</span>
+            <div className="flex gap-2">
+              {['', '#3b82f6', '#ef4444', '#10b981', '#f59e0b'].map((c) => (
+                <button
+                  key={c}
+                  onClick={() => {
+                    if (activeTab === 'pageNumber') setPageNumber({ ...pageNumber, color: c });
+                    else setWatermark({ ...watermark, color: c });
+                  }}
+                  className={`w-5 h-5 rounded-full border-2 transition-all ${
+                    (activeTab === 'pageNumber' ? pageNumber.color : watermark.color) === c
+                      ? 'border-blue-500 scale-110 shadow-sm'
+                      : 'border-transparent hover:scale-105'
+                  }`}
+                  style={{ backgroundColor: c || '#94a3b8' }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Real-time Preview Area */}
+        <div className="pt-4 border-t border-black/5 dark:border-white/5">
+          <div className="text-[10px] font-bold text-slate-400 uppercase mb-3 text-center">{language === 'zh' ? '实时预览 (底部栏)' : 'Real-time Preview (Footer)'}</div>
+          <div className="relative h-16 bg-slate-50 dark:bg-black/20 rounded-xl border border-dashed border-black/10 dark:border-white/10 flex items-center px-4 overflow-hidden">
+            {/* Watermark Preview */}
+            <div 
+              className="absolute transition-all duration-300 font-mono"
+              style={{ 
+                left: watermark.position === 'left' ? '1rem' : watermark.position === 'center' ? '50%' : 'auto',
+                right: watermark.position === 'right' ? '1rem' : 'auto',
+                transform: watermark.position === 'center' ? 'translateX(-50%)' : 'none',
+                fontSize: `${watermark.fontSize}px`,
+                opacity: watermark.opacity,
+                color: watermark.color || 'currentColor'
+              }}
+            >
+              MD2DESIGN
+            </div>
+            
+            {/* Page Number Preview */}
+            <div 
+              className="absolute transition-all duration-300 font-mono font-bold"
+              style={{ 
+                left: pageNumber.position === 'left' ? '1rem' : pageNumber.position === 'center' ? '50%' : 'auto',
+                right: pageNumber.position === 'right' ? '1rem' : 'auto',
+                transform: pageNumber.position === 'center' ? 'translateX(-50%)' : 'none',
+                fontSize: `${pageNumber.fontSize}px`,
+                opacity: pageNumber.opacity,
+                color: pageNumber.color || 'currentColor'
+              }}
+            >
+              1
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const DemoMultiLineList = () => {
+  const { language } = useStore();
+  const [isList, setIsList] = useState(false);
+  const lines = [
+    language === 'zh' ? '第一行内容' : 'First line of content',
+    language === 'zh' ? '第二行内容' : 'Second line of content',
+    language === 'zh' ? '第三行内容' : 'Third line of content',
+  ];
+
+  return (
+    <div className="w-full max-w-md space-y-6">
+      <div className="text-xs font-bold text-slate-400 uppercase text-center mb-2">
+        {language === 'zh' ? '多行列表切换' : 'Multi-line List Toggle'}
+      </div>
+
+      <div className="bg-white dark:bg-[#151515] rounded-2xl border border-black/5 dark:border-white/5 shadow-sm overflow-hidden">
+        {/* Editor-like Toolbar */}
+        <div className="px-4 py-2 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02] flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsList(!isList)}
+              className={`p-1.5 rounded transition-all flex items-center gap-2 ${
+                isList ? 'bg-blue-500/10 text-blue-600' : 'hover:bg-black/5 dark:hover:bg-white/5 text-slate-400'
+              }`}
+            >
+              <List size={14} />
+            </button>
+            <div className="w-px h-4 bg-black/10 dark:bg-white/10" />
+            <div className="flex gap-1">
+              <div className="w-3 h-3 rounded-full bg-slate-200 dark:bg-white/10" />
+              <div className="w-3 h-3 rounded-full bg-slate-200 dark:bg-white/10" />
+            </div>
+          </div>
+          <div className="text-[10px] font-mono text-slate-400 opacity-60">Markdown Editor</div>
+        </div>
+
+        {/* Editor-like Content Area */}
+        <div className="p-6 font-mono text-xs space-y-1.5 min-h-[120px] bg-white dark:bg-[#151515]">
+          {lines.map((line, i) => (
+            <motion.div 
+              key={i} 
+              layout
+              className="flex items-center gap-2"
+            >
+              <span className={isList ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-slate-500'}>
+                {isList ? `- ${line}` : line}
+              </span>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      <p className="text-[10px] text-center text-slate-400 px-8 leading-relaxed">
+        {language === 'zh' 
+          ? '现在支持在编辑器中一次性选中多行文本，并点击工具栏按钮一键添加/取消列表前缀。' 
+          : 'Now supports selecting multiple lines in the editor and toggling list prefixes for all of them at once.'}
+      </p>
+    </div>
   );
 };
 
@@ -1331,14 +1814,14 @@ const DemoAutoHeight = () => {
   return (
     <div className="w-full flex flex-col items-center gap-6">
       <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-        {isZh ? '自动高度 vs 固定比例' : 'Auto Height vs Fixed Aspect Ratio'}
+        {isZh ? '长图 vs 固定比例' : 'Long Image vs Fixed Aspect Ratio'}
       </div>
 
       <div className="flex items-center gap-1 bg-white dark:bg-white/5 p-1 rounded-xl border border-black/5 dark:border-white/10 shadow-sm">
         {[
           { id: 'portrait', label: isZh ? '竖屏' : 'Portrait' },
           { id: 'landscape', label: isZh ? '横屏' : 'Landscape' },
-          { id: 'auto', label: isZh ? '自动高度' : 'Auto Height' }
+          { id: 'auto', label: isZh ? '长图' : 'Long Image' }
         ].map((m) => (
           <button
             key={m.id}
