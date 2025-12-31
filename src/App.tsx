@@ -4,6 +4,7 @@ import { Editor } from './components/Editor';
 import { Preview } from './components/Preview';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
+import { NewYearEffect } from './components/NewYearEffect';
 
 import { injectAllLocalFonts } from './utils/fonts';
 
@@ -101,6 +102,7 @@ function App() {
 
   return (
     <div className={`relative w-full h-screen overflow-hidden font-sans transition-colors duration-500 ${theme === 'dark' ? 'grid-bg text-white' : 'grid-bg-light text-slate-900'}`}>
+      <NewYearEffect />
       <TopBar />
       
       <div className="relative z-10 w-full h-full pt-14 overflow-hidden">
