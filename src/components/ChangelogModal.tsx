@@ -1048,6 +1048,9 @@ const DemoMarkdown = () => {
       <div className="flex-1 flex flex-col gap-2">
         <div className="text-xs font-bold text-slate-500 uppercase">{language === 'zh' ? '编辑器' : 'Editor'}</div>
         <textarea
+          id="demo-markdown-input"
+          name="demoMarkdown"
+          aria-label={language === 'zh' ? "Markdown 演示输入" : "Markdown Demo Input"}
           value={text}
           onChange={(e) => setText(e.target.value)}
           className="w-full h-full p-4 text-sm font-mono rounded-xl bg-white dark:bg-[#151515] border border-transparent focus:border-blue-500/50 outline-none shadow-sm resize-none transition-all"
