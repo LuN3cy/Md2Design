@@ -398,6 +398,9 @@ export const Editor = () => {
             </div>
             
             <textarea
+              id="markdown-editor"
+              name="markdown"
+              aria-label="Markdown Editor"
               ref={textareaRef}
               className="flex-1 w-full h-full bg-transparent resize-none focus:outline-none font-mono text-sm leading-relaxed p-4 text-inherit placeholder-inherit/50 custom-scrollbar"
               value={markdown}

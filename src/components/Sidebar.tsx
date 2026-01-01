@@ -1027,6 +1027,9 @@ export const Sidebar = () => {
                {/* Custom CSS */}
                <SidebarSection title={t.customCSS} icon={<Monitor size={16} />}>
                 <textarea
+                  id="custom-css-input"
+                  name="customCSS"
+                  aria-label={t.customCSS}
                   value={cardStyle.customCSS}
                   onChange={(e) => updateCardStyle({ customCSS: e.target.value })}
                   placeholder=".card { ... }"
