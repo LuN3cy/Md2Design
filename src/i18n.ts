@@ -35,7 +35,8 @@ const translations = {
     paddingSync: 'Sync Padding',
     fontFamily: 'Font Family',
     fontSize: 'Font Size',
-    headingScale: 'H4~H6 Heading Size',
+
+    headingScale: 'H4~H6 Size',
     zoom: 'Preview Zoom',
     editor: 'EDITOR',
     editorHint: 'Support Feishu/Notion/Lark docs paste auto-conversion',
@@ -73,6 +74,8 @@ const translations = {
     customFonts: 'Custom Fonts',
     noCustomFonts: 'No custom fonts added',
     selectFont: 'Select Font',
+    variableFont: 'Variable Font',
+    enableAllWeights: 'Enable All Weights',
     shadow: 'Shadow',
     watermark: 'Watermark',
     pageNumber: 'Page Number',
@@ -142,6 +145,9 @@ const translations = {
     enterPresetName: 'Enter preset name...',
     feedback: 'Feedback',
     onboardingTip: 'Check updates and report bugs here',
+    autoPaginate: 'Auto Paginate',
+    autoPaginatedToast: 'Auto Paginated',
+    autoPaginatedMsg: 'Content too long, auto-split by height. Use "---" for manual split.',
   },
   zh: {
     title: 'Md2Design',
@@ -177,7 +183,8 @@ const translations = {
     paddingSync: '同步边距',
     fontFamily: '字体',
     fontSize: '字号',
-    headingScale: 'H4~H6 标题字号',
+
+    headingScale: 'H4~H6 字号',
     zoom: '预览缩放',
     editor: '编辑器',
     editorHint: '支持飞书、Notion文档粘贴自动识别',
@@ -215,6 +222,8 @@ const translations = {
     customFonts: '自定义字体',
     noCustomFonts: '暂无自定义字体',
     selectFont: '选择字体',
+    variableFont: '可变字体',
+    enableAllWeights: '启用所有字重',
     shadow: '阴影',
     watermark: '水印',
     pageNumber: '页码',
@@ -284,6 +293,9 @@ const translations = {
     enterPresetName: '输入预设名称...',
     feedback: '意见反馈',
     onboardingTip: '这里可以查看更新和反馈bug',
+    autoPaginate: '自动分页',
+    autoPaginatedToast: '已自动分页',
+    autoPaginatedMsg: '内容过长，已按页面高度自动切割。可用 "---" 手动调整。',
   }
 };
 

@@ -53,16 +53,27 @@ const estimateLineHeight = (line: string, nextLine: string | undefined, style: C
     return (wrapLines * fontSize * lineHeight) + mb;
   }
 
+  // Table
+  if (trimmedLine.startsWith('|')) {
+    const wrapLines = Math.max(1, Math.ceil(line.length / charsPerLine));
+    return (wrapLines * fontSize * lineHeight) + 8; // Extra for cell padding
+  }
+
+  // Code Block start/end
+  if (trimmedLine.startsWith('```')) {
+    return 20; // Padding for code block container
+  }
+
   // Regular Paragraph line
   const wrapLines = Math.max(1, Math.ceil(line.length / charsPerLine));
   const nextIsEmpty = !nextLine || nextLine.trim() === '';
-  const nextIsSpecial = nextLine && (nextLine.startsWith('#') || nextLine.startsWith('>') || nextLine.startsWith('-') || nextLine.startsWith('*'));
+  const nextIsSpecial = nextLine && (nextLine.startsWith('#') || nextLine.startsWith('>') || nextLine.startsWith('-') || nextLine.startsWith('*') || nextLine.startsWith('|'));
   const mb = (nextIsEmpty || nextIsSpecial) ? 8 : 0;
   
   return (wrapLines * fontSize * lineHeight) + mb;
 };
 
-export const paginateMarkdown = (markdown: string, style: CardStyle): string => {
+export const paginateMarkdown = (markdown: string, style: CardStyle): string[] => {
   const { width, height } = getCardDimensions(style);
   
   // Use a fixed base width for pagination calculation to prevent sudden height jumps when scaling
@@ -81,46 +92,48 @@ export const paginateMarkdown = (markdown: string, style: CardStyle): string => 
   // but for most cases, we want the pagination to be consistent.
   const maxContentHeight = height - (style.padding * 2) - verticalPadding - footerHeight;
 
-  // 1. Clean existing pagination markers
-  const cleanedMarkdown = markdown.split(/\n\s*---\s*\n|^\s*---\s*$/m).join('\n\n');
+  // 1. Split by manual separators first
+  const manualPages = markdown.split(/\n\s*---\s*\n|^\s*---\s*$/m);
+  const finalPages: string[] = [];
 
-  // 2. Split by line for granular height calculation
-  const lines = cleanedMarkdown.split('\n');
-  
-  let pages: string[] = [];
-  let currentPageLines: string[] = [];
-  let currentHeight = 0;
-  let isFirstInPage = true;
+  for (const pageContent of manualPages) {
+    if (pageContent.trim() === '' && manualPages.length > 1) continue;
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const trimmedLine = line.trim();
-    
-    if (trimmedLine === '' && isFirstInPage) continue;
+    const lines = pageContent.split('\n');
+    let currentPageLines: string[] = [];
+    let currentHeight = 0;
+    let isFirstInPage = true;
 
-    const h = estimateLineHeight(line, lines[i+1], style, contentWidth, isFirstInPage);
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const trimmedLine = line.trim();
+      
+      if (trimmedLine === '' && isFirstInPage) continue;
 
-    if (currentHeight + h > maxContentHeight && currentPageLines.length > 0) {
-      // Clean trailing empty lines
-      while (currentPageLines.length > 0 && currentPageLines[currentPageLines.length - 1].trim() === '') {
-        currentPageLines.pop();
+      const h = estimateLineHeight(line, lines[i+1], style, contentWidth, isFirstInPage);
+
+      if (currentHeight + h > maxContentHeight && currentPageLines.length > 0) {
+        // Clean trailing empty lines
+        while (currentPageLines.length > 0 && currentPageLines[currentPageLines.length - 1].trim() === '') {
+          currentPageLines.pop();
+        }
+        finalPages.push(currentPageLines.join('\n').trim());
+        currentPageLines = [line];
+        currentHeight = h;
+        isFirstInPage = true;
+        if (trimmedLine === '') isFirstInPage = true;
+        else isFirstInPage = false;
+      } else {
+        currentPageLines.push(line);
+        currentHeight += h;
+        if (trimmedLine !== '') isFirstInPage = false;
       }
-      pages.push(currentPageLines.join('\n').trim());
-      currentPageLines = [line];
-      currentHeight = h;
-      isFirstInPage = true;
-      if (trimmedLine === '') isFirstInPage = true; // Still first if it's an empty line
-      else isFirstInPage = false;
-    } else {
-      currentPageLines.push(line);
-      currentHeight += h;
-      if (trimmedLine !== '') isFirstInPage = false;
+    }
+
+    if (currentPageLines.length > 0) {
+      finalPages.push(currentPageLines.join('\n').trim());
     }
   }
 
-  if (currentPageLines.length > 0) {
-    pages.push(currentPageLines.join('\n').trim());
-  }
-
-  return pages.join('\n\n---\n\n');
+  return finalPages.length > 0 ? finalPages : [''];
 };

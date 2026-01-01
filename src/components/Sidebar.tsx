@@ -57,11 +57,6 @@ export const Sidebar = () => {
       .then(res => res.json())
       .then(data => {
         setLocalFonts(data);
-        // Inject current font if it's in the list
-        const currentFont = data.find((f: LocalFont) => f.name === cardStyle.fontFamily);
-        if (currentFont) {
-          injectLocalFontFace(currentFont.name, currentFont.filename);
-        }
       })
       .catch(err => console.error('Failed to load local fonts list:', err));
   }, []);
@@ -194,7 +189,7 @@ export const Sidebar = () => {
                           if (o === 'autoHeight') {
                               updateCardStyle({ autoHeight: true });
                           } else {
-                              updateCardStyle({ orientation: o as any, autoHeight: false });
+                              updateCardStyle({ orientation: o as 'portrait' | 'landscape', autoHeight: false });
                           }
                       }}
                       className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-xs font-medium rounded-md transition-all ${
@@ -204,7 +199,7 @@ export const Sidebar = () => {
                       }`}
                     >
                       {o === 'portrait' ? <Smartphone size={14} /> : o === 'landscape' ? <MonitorIcon size={14} /> : <Layout size={14} />}
-                      <span className="capitalize">{o === 'autoHeight' ? t.autoHeight : (t as any)[o]}</span>
+                      <span className="capitalize">{o === 'autoHeight' ? t.autoHeight : (o === 'portrait' ? t.portrait : t.landscape)}</span>
                     </button>
                   ))}
                 </div>
@@ -430,7 +425,7 @@ export const Sidebar = () => {
                       {['solid', 'gradient', 'image'].map((type) => (
                         <button 
                           key={type}
-                          onClick={() => updateCardStyle({ backgroundType: type as any })}
+                          onClick={() => updateCardStyle({ backgroundType: type as 'solid' | 'gradient' | 'image' })}
                           className={`flex-1 py-1 text-[10px] rounded transition-all capitalize ${cardStyle.backgroundType === type ? 'bg-black/10 dark:bg-white/20 text-slate-900 dark:text-white' : 'text-black/50 dark:text-white/50'}`}
                         >
                           {t[type as keyof typeof t]}
@@ -560,7 +555,7 @@ export const Sidebar = () => {
                   {['solid', 'gradient', 'image'].map((type) => (
                     <button 
                       key={type}
-                      onClick={() => updateCardStyle({ cardBackgroundType: type as any })}
+                      onClick={() => updateCardStyle({ cardBackgroundType: type as 'solid' | 'gradient' | 'image' })}
                       className={`flex-1 py-1 text-[10px] rounded transition-all capitalize ${cardStyle.cardBackgroundType === type ? 'bg-black/10 dark:bg-white/20 text-slate-900 dark:text-white' : 'text-black/50 dark:text-white/50'}`}
                     >
                       {t[type as keyof typeof t]}
@@ -883,12 +878,12 @@ export const Sidebar = () => {
                                  const newFonts = cardStyle.customFonts.map(f => 
                                    f.name === font.name ? { ...f, weight: e.target.checked ? 'variable' : 'normal' } : f
                                  );
-                                 updateCardStyle({ customFonts: newFonts as any });
+                                 updateCardStyle({ customFonts: newFonts });
                                }
                              }}
                              className="rounded border-black/20 dark:border-white/20 bg-black/10 dark:bg-white/10"
                            />
-                           <span>Variable Font (Enable All Weights)</span>
+                           <span>{t.variableFont} ({t.enableAllWeights})</span>
                          </label>
                        </div>
                      )}
@@ -949,7 +944,7 @@ export const Sidebar = () => {
                                {['left', 'center', 'right'].map((pos) => (
                                  <button
                                    key={pos}
-                                   onClick={() => updateCardStyle({ watermark: { ...cardStyle.watermark, position: pos as any } })}
+                                   onClick={() => updateCardStyle({ watermark: { ...cardStyle.watermark, position: pos as 'left' | 'center' | 'right' } })}
                                    className={`flex-1 py-1 text-[10px] rounded transition-all capitalize ${cardStyle.watermark.position === pos ? 'bg-black/10 dark:bg-white/20 text-slate-900 dark:text-white' : 'text-black/50 dark:text-white/50'}`}
                                  >
                                    {t[pos as keyof typeof t]}
@@ -999,7 +994,7 @@ export const Sidebar = () => {
                                  {['left', 'center', 'right'].map((pos) => (
                                    <button
                                      key={pos}
-                                     onClick={() => updateCardStyle({ pageNumber: { ...cardStyle.pageNumber, position: pos as any } })}
+                                     onClick={() => updateCardStyle({ pageNumber: { ...cardStyle.pageNumber, position: pos as 'left' | 'center' | 'right' } })}
                                      className={`flex-1 py-1 text-[10px] rounded transition-all capitalize ${cardStyle.pageNumber.position === pos ? 'bg-black/10 dark:bg-white/20 text-slate-900 dark:text-white' : 'text-black/50 dark:text-white/50'}`}
                                    >
                                      {t[pos as keyof typeof t]}
@@ -1032,6 +1027,9 @@ export const Sidebar = () => {
                {/* Custom CSS */}
                <SidebarSection title={t.customCSS} icon={<Monitor size={16} />}>
                 <textarea
+                  id="custom-css-input"
+                  name="customCSS"
+                  aria-label={t.customCSS}
                   value={cardStyle.customCSS}
                   onChange={(e) => updateCardStyle({ customCSS: e.target.value })}
                   placeholder=".card { ... }"
@@ -1060,11 +1058,11 @@ export const Sidebar = () => {
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] pointer-events-auto"
+            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-100 pointer-events-auto"
           >
             <div className="bg-white/40 dark:bg-black/40 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-2xl rounded-full px-6 py-4 flex items-center gap-6 min-w-[320px]">
               {/* Countdown Circle */}
-              <div className="relative w-12 h-12 flex-shrink-0 flex items-center justify-center">
+              <div className="relative w-12 h-12 shrink-0 flex items-center justify-center">
                 <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 48 48">
                   <circle
                     cx="24"
@@ -1109,7 +1107,7 @@ export const Sidebar = () => {
                 </button>
                 <button
                   onClick={closeToast}
-                  className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors text-black dark:text-white opacity-40 hover:opacity-100 flex-shrink-0"
+                  className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors text-black dark:text-white opacity-40 hover:opacity-100 shrink-0"
                 >
                   <Plus size={18} className="rotate-45" />
                 </button>

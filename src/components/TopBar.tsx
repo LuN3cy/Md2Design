@@ -11,7 +11,7 @@ import { ChangelogModal } from './ChangelogModal';
 import logoSvg from '../assets/logo.svg';
 
 export const TopBar = () => {
-  const { theme, toggleTheme, toggleLanguage, isScrolled, previewZoom, setPreviewZoom } = useStore();
+  const { theme, toggleTheme, toggleLanguage, isScrolled, previewZoom, setPreviewZoom, isExporting, setIsExporting } = useStore();
   const t = useTranslation();
   const [showContact, setShowContact] = useState(false);
   const [showExport, setShowExport] = useState(false);
@@ -20,7 +20,6 @@ export const TopBar = () => {
 
   // Onboarding tooltip logic
   useEffect(() => {
-    console.log('Onboarding will show in 1.5s...');
     const timer = setTimeout(() => {
       setShowOnboarding(true);
     }, 1500);
@@ -60,12 +59,12 @@ export const TopBar = () => {
         <AnimatePresence>
           {isOpen && (
             <>
-              <div className="fixed inset-0 z-[100]" onClick={() => setIsOpen(false)} />
+              <div className="fixed inset-0 z-100" onClick={() => setIsOpen(false)} />
               <motion.div
                 initial={{ opacity: 0, y: 4, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 4, scale: 0.95 }}
-                className="absolute left-0 right-0 top-full mt-1 z-[101] bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden py-1"
+                className="absolute left-0 right-0 top-full mt-1 z-101 bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden py-1"
               >
                 {options.map((option) => (
                   <button
@@ -158,9 +157,7 @@ export const TopBar = () => {
     return parts.filter(Boolean).join('_');
   };
 
-  const [isExporting, setIsExporting] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [progress, setProgress] = useState(0);  const [showSuccess, setShowSuccess] = useState(false);
   const [previewSize, setPreviewSize] = useState<{ single: string, total: string }>({ single: '-', total: '-' });
 
   // Calculate size estimation
@@ -178,7 +175,7 @@ export const TopBar = () => {
         // Generate sample blob
         const options = { 
             pixelRatio: scale,
-            filter: (node: any) => !node.classList?.contains('export-ignore')
+            filter: (node: HTMLElement) => !node.classList?.contains('export-ignore')
         };
         
         let blob;
@@ -210,12 +207,13 @@ export const TopBar = () => {
 
   const handleExport = async () => {
     setIsExporting(true);
+    setIsExporting(true); // Redundant for clarity or just once is enough
     setProgress(0);
     try {
         const cards = Array.from(document.querySelectorAll('[id^="card-"]')) as HTMLElement[];
         const options = { 
             pixelRatio: scale,
-            filter: (node: any) => !node.classList?.contains('export-ignore')
+            filter: (node: HTMLElement) => !node.classList?.contains('export-ignore')
         };
         
         let completed = 0;
@@ -298,11 +296,11 @@ export const TopBar = () => {
             // Folder Export (File System Access API)
             if (exportTarget === 'folder' && 'showDirectoryPicker' in window) {
                 try {
-                    // @ts-ignore
+                    // @ts-expect-error - File System Access API
                     const dirHandle = await window.showDirectoryPicker();
                     let targetHandle = dirHandle;
                     if (folderName) {
-                        // @ts-ignore
+
                         targetHandle = await dirHandle.getDirectoryHandle(folderName, { create: true });
                     }
 
@@ -311,9 +309,9 @@ export const TopBar = () => {
                     const tasks = cards.map((card, i) => async () => {
                         const blob = await generateBlob(card);
                         const fileName = `${generateFileName(i, cards.length)}.${format}`;
-                        // @ts-ignore
+
                         const fileHandle = await targetHandle.getFileHandle(fileName, { create: true });
-                        // @ts-ignore
+
                         const writable = await fileHandle.createWritable();
                         await writable.write(blob);
                         await writable.close();
@@ -526,7 +524,7 @@ export const TopBar = () => {
                       stiffness: 260,
                       damping: 20
                     }}
-                    className="absolute left-full whitespace-nowrap z-[100]"
+                    className="absolute left-full whitespace-nowrap z-100"
                    >
                      <div className="bg-orange-400/85 dark:bg-orange-500/80 backdrop-blur-md text-white px-4 py-2 rounded-xl shadow-[0_10px_30px_-10px_rgba(251,146,60,0.5)] text-xs font-bold flex items-center gap-2 border border-white/20">
                          <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
@@ -552,6 +550,9 @@ export const TopBar = () => {
                 {previewZoom > 0 ? `${Math.round(previewZoom * 100)}%` : 'Auto'}
             </span>
             <input
+              id="preview-zoom-slider"
+              name="previewZoom"
+              aria-label={t.zoom}
               type="range"
               min="0.2"
               max="4"
@@ -623,7 +624,7 @@ export const TopBar = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
             onClick={() => setShowExport(false)}
           >
             <motion.div
@@ -634,8 +635,8 @@ export const TopBar = () => {
               onClick={(e) => e.stopPropagation()}
             >
                {/* Background Glow */}
-               <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 blur-[80px] rounded-full pointer-events-none -z-0" />
-               <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500/10 blur-[60px] rounded-full pointer-events-none -z-0" />
+               <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 blur-[80px] rounded-full pointer-events-none z-0" />
+               <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500/10 blur-[60px] rounded-full pointer-events-none z-0" />
 
                <div className="relative z-10 flex flex-col h-full overflow-hidden">
                  <div className="flex items-center justify-between mb-6 shrink-0">
@@ -655,12 +656,12 @@ export const TopBar = () => {
                    {/* Format & Scale Row */}
                    <div className="grid grid-cols-2 gap-4">
                      <div>
-                       <label className="text-xs font-medium text-slate-500 dark:text-white/50 mb-2 block uppercase tracking-wider">{t.format}</label>
-                       <div className="flex p-1 bg-black/5 dark:bg-white/5 rounded-lg border border-black/5 dark:border-white/5">
+                       <span id="format-label" className="text-xs font-medium text-slate-500 dark:text-white/50 mb-2 block uppercase tracking-wider">{t.format}</span>
+                       <div role="group" aria-labelledby="format-label" className="flex p-1 bg-black/5 dark:bg-white/5 rounded-lg border border-black/5 dark:border-white/5">
                          {['png', 'jpg'].map((f) => (
                            <button
                              key={f}
-                             onClick={() => setFormat(f as any)}
+                             onClick={() => setFormat(f as 'png' | 'jpg')}
                              className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all uppercase ${
                                format === f ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
                              }`}
@@ -671,12 +672,12 @@ export const TopBar = () => {
                        </div>
                      </div>
                      <div>
-                       <label className="text-xs font-medium text-slate-500 dark:text-white/50 mb-2 block uppercase tracking-wider">{t.scale}</label>
-                       <div className="flex p-1 bg-black/5 dark:bg-white/5 rounded-lg border border-black/5 dark:border-white/5">
+                       <span id="scale-label" className="text-xs font-medium text-slate-500 dark:text-white/50 mb-2 block uppercase tracking-wider">{t.scale}</span>
+                       <div role="group" aria-labelledby="scale-label" className="flex p-1 bg-black/5 dark:bg-white/5 rounded-lg border border-black/5 dark:border-white/5">
                          {[1, 2, 3, 4].map((s) => (
                            <button
                              key={s}
-                             onClick={() => setScale(s as any)}
+                             onClick={() => setScale(s as 1 | 2 | 3 | 4)}
                              className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
                                scale === s ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
                              }`}
@@ -690,15 +691,15 @@ export const TopBar = () => {
 
                    {/* Export Mode */}
                    <div>
-                     <label className="text-xs font-medium text-slate-500 dark:text-white/50 mb-2 block uppercase tracking-wider">{t.exportMode}</label>
-                     <div className="flex flex-col gap-2">
+                     <span id="export-mode-label" className="text-xs font-medium text-slate-500 dark:text-white/50 mb-2 block uppercase tracking-wider">{t.exportMode}</span>
+                     <div role="group" aria-labelledby="export-mode-label" className="flex flex-col gap-2">
                        {[
                          { value: 'multiple', label: t.multipleFiles, desc: 'Package multiple cards' },
                          { value: 'single', label: t.singleFile, desc: 'Download cards one by one' }
                        ].map((mode) => (
                          <button
                            key={mode.value}
-                           onClick={() => setExportMode(mode.value as any)}
+                           onClick={() => setExportMode(mode.value as 'single' | 'multiple')}
                            className={`p-3 rounded-xl border transition-all text-left flex items-center justify-between group ${
                              exportMode === mode.value 
                                ? 'bg-blue-500/10 border-blue-500/50' 
@@ -724,15 +725,15 @@ export const TopBar = () => {
                    {/* Export Target (Only for multiple mode) */}
                    {exportMode === 'multiple' && (
                      <div>
-                       <label className="text-xs font-medium text-slate-500 dark:text-white/50 mb-2 block uppercase tracking-wider">{t.exportTarget}</label>
-                       <div className="flex flex-col gap-2">
+                       <span id="export-target-label" className="text-xs font-medium text-slate-500 dark:text-white/50 mb-2 block uppercase tracking-wider">{t.exportTarget}</span>
+                       <div role="group" aria-labelledby="export-target-label" className="flex flex-col gap-2">
                          {[
                            { value: 'zip', label: t.targetZip, desc: 'Compatible with all folders' },
                            { value: 'folder', label: t.targetFolder, desc: 'Requires folder permission' }
                          ].map((target) => (
                            <button
                              key={target.value}
-                             onClick={() => setExportTarget(target.value as any)}
+                             onClick={() => setExportTarget(target.value as 'zip' | 'folder')}
                              className={`p-3 rounded-xl border transition-all text-left flex items-center justify-between group ${
                                exportTarget === target.value 
                                  ? 'bg-blue-500/10 border-blue-500/50' 
@@ -764,20 +765,22 @@ export const TopBar = () => {
                    {/* Folder Name (Only for multiple mode) */}
                    {exportMode === 'multiple' && (
                      <div>
-                        <label className="text-xs font-medium text-slate-500 dark:text-white/50 mb-2 block uppercase tracking-wider">{t.folderName}</label>
-                        <input 
-                          type="text" 
-                          value={folderName}
-                          onChange={(e) => setFolderName(e.target.value)}
-                          placeholder="cards-export"
-                          className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl p-3 text-sm text-slate-900 dark:text-white placeholder-black/30 dark:placeholder-white/20 focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all"
-                        />
+                         <label htmlFor="export-folder-name" className="text-xs font-medium text-slate-500 dark:text-white/50 mb-2 block uppercase tracking-wider">{t.folderName}</label>
+                         <input 
+                           id="export-folder-name"
+                           name="folderName"
+                           type="text" 
+                           value={folderName}
+                           onChange={(e) => setFolderName(e.target.value)}
+                           placeholder="cards-export"
+                           className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl p-3 text-sm text-slate-900 dark:text-white placeholder-black/30 dark:placeholder-white/20 focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all"
+                         />
                      </div>
                    )}
 
                    {/* File Name Customization */}
                    <div className="space-y-4">
-                      <label className="text-xs font-medium text-slate-500 dark:text-white/50 mb-2 block uppercase tracking-wider">{t.fileNameCustom}</label>
+                      <span className="text-xs font-medium text-slate-500 dark:text-white/50 mb-2 block uppercase tracking-wider">{t.fileNameCustom}</span>
                       
                       {/* Naming Mode Toggle */}
                       <div className="flex p-1 bg-black/5 dark:bg-white/5 rounded-lg border border-black/5 dark:border-white/5">
@@ -787,7 +790,7 @@ export const TopBar = () => {
                         ].map((m) => (
                           <button
                             key={m.id}
-                            onClick={() => setNamingMode(m.id as any)}
+                             onClick={() => setNamingMode(m.id as 'system' | 'custom')}
                             className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
                               namingMode === m.id ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white'
                             }`}
@@ -799,7 +802,10 @@ export const TopBar = () => {
 
                       {namingMode === 'system' ? (
                         <div className="space-y-3">
+                          <label htmlFor="system-custom-name" className="sr-only">{t.namingCustom}</label>
                           <input 
+                            id="system-custom-name"
+                            name="systemCustomName"
                             type="text" 
                             value={namingConfigs.custom}
                             onChange={(e) => setNamingConfigs({ ...namingConfigs, custom: e.target.value })}
@@ -807,7 +813,7 @@ export const TopBar = () => {
                             className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl p-3 text-sm text-slate-900 dark:text-white focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all"
                           />
                           <div className="p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
-                            <label className="text-[10px] uppercase tracking-wider text-black/40 dark:text-white/40 mb-1 block">{t.namingPreview}</label>
+                            <h3 className="text-[10px] uppercase tracking-wider text-black/40 dark:text-white/40 mb-1 block">{t.namingPreview}</h3>
                             <div className="text-xs font-mono text-slate-500 dark:text-white/60 truncate">
                               {generateFileName(0, 10)}.{format}
                             </div>
@@ -817,30 +823,30 @@ export const TopBar = () => {
                         <div className="space-y-4">
                           {/* Part Selectors (Multi-select) */}
                           <div className="flex flex-wrap gap-2">
-                            {[
+                            {([
                               { id: 'prefix', label: t.namingPrefix },
                               { id: 'date', label: t.namingDate },
                               { id: 'custom', label: t.namingCustom },
                               { id: 'number', label: t.namingNumber }
-                            ].map((part) => (
+                            ] as const).map((part) => (
                               <button
                                 key={part.id}
                                 onClick={() => {
-                                  if (namingParts.includes(part.id as any)) {
+                                  if (namingParts.includes(part.id)) {
                                     setNamingParts(namingParts.filter(p => p !== part.id));
                                   } else {
-                                    setNamingParts([...namingParts, part.id as any]);
+                                    setNamingParts([...namingParts, part.id]);
                                   }
                                 }}
                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
-                                  namingParts.includes(part.id as any)
+                                  namingParts.includes(part.id)
                                     ? 'bg-blue-500 border-blue-500 text-white shadow-md'
                                     : 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/5 text-black/40 dark:text-white/40'
                                 }`}
                               >
                                 {part.label}
-                                {namingParts.includes(part.id as any) && (
-                                  <span className="ml-1.5 opacity-60">{namingParts.indexOf(part.id as any) + 1}</span>
+                                {namingParts.includes(part.id) && (
+                                  <span className="ml-1.5 opacity-60">{namingParts.indexOf(part.id) + 1}</span>
                                 )}
                               </button>
                             ))}
@@ -890,6 +896,9 @@ export const TopBar = () => {
 
                                 {part === 'prefix' && (
                                   <input 
+                                    id="naming-prefix-input"
+                                    name="namingPrefix"
+                                    aria-label={t.namingPrefix}
                                     type="text" 
                                     value={namingConfigs.prefix}
                                     onChange={(e) => setNamingConfigs({ ...namingConfigs, prefix: e.target.value })}
@@ -898,6 +907,9 @@ export const TopBar = () => {
                                 )}
                                 {part === 'custom' && (
                                   <input 
+                                    id="naming-custom-input"
+                                    name="namingCustom"
+                                    aria-label={t.namingCustom}
                                     type="text" 
                                     value={namingConfigs.custom}
                                     onChange={(e) => setNamingConfigs({ ...namingConfigs, custom: e.target.value })}
@@ -967,7 +979,7 @@ export const TopBar = () => {
 
                           {/* Preview for Number Order */}
                           <div className="p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
-                            <label className="text-[10px] uppercase tracking-wider text-black/40 dark:text-white/40 mb-1 block">{t.namingPreview}</label>
+                            <h3 className="text-[10px] uppercase tracking-wider text-black/40 dark:text-white/40 mb-1 block">{t.namingPreview}</h3>
                             <div className="space-y-1 font-mono text-[10px] text-slate-500 dark:text-white/60">
                               {namingParts.includes('number') ? (
                                 <>
@@ -1017,7 +1029,7 @@ export const TopBar = () => {
                      <button
                        onClick={handleExport}
                        disabled={isExporting}
-                       className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-xl text-sm font-bold shadow-xl shadow-blue-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transform active:scale-[0.98]"
+                       className="w-full py-3.5 bg-linear-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-xl text-sm font-bold shadow-xl shadow-blue-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transform active:scale-[0.98]"
                      >
                        {isExporting ? (
                          <>
@@ -1045,7 +1057,7 @@ export const TopBar = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[70] flex items-center justify-center pointer-events-none"
+            className="fixed inset-0 z-70 flex items-center justify-center pointer-events-none"
           >
             <motion.div
               initial={{ scale: 0.8, y: 20, opacity: 0 }}
@@ -1071,7 +1083,7 @@ export const TopBar = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
             onClick={() => setShowContact(false)}
           >
             <motion.div

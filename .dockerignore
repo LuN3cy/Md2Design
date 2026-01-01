@@ -1,0 +1,9 @@
+node_modules
+dist
+.git
+.github
+*.log
+.DS_Store
+.vscode
+.env*
+package-lock.json

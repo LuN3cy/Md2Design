@@ -184,6 +184,9 @@ interface AppState {
   setIsEditorOpen: (isOpen: boolean) => void;
   isSidebarOpen: boolean;
   setIsSidebarOpen: (isOpen: boolean) => void;
+
+  isExporting: boolean;
+  setIsExporting: (isExporting: boolean) => void;
 }
 
 export const PRESET_GRADIENTS = [
@@ -332,13 +335,15 @@ export const useStore = create<AppState>()(
   markdown: DEFAULT_MARKDOWN_ZH,
   setMarkdown: (markdown) => set({ markdown }),
 
-  theme: 'dark',
+  theme: 'light',
   toggleTheme: () => set((state) => {
     const newTheme = state.theme === 'light' ? 'dark' : 'light';
-    if (newTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    if (typeof document !== 'undefined') {
+      if (newTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
     }
     return { theme: newTheme };
   }),
@@ -414,7 +419,7 @@ export const useStore = create<AppState>()(
   previousCardStyle: null,
   updateCardStyle: (style) => set((state) => {
     // If updating shadow config, recompute shadow string
-    let newStyle = { ...style };
+    const newStyle = { ...style };
     
     if (style.shadowConfig || style.shadowEnabled !== undefined) {
       const config = { ...state.cardStyle.shadowConfig, ...style.shadowConfig };
@@ -497,50 +502,54 @@ export const useStore = create<AppState>()(
   setIsEditorOpen: (isOpen) => set({ isEditorOpen: isOpen }),
   isSidebarOpen: true,
   setIsSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
+
+  isExporting: false,
+  setIsExporting: (isExporting) => set({ isExporting }),
     }),
     {
       name: 'md2card-storage',
       storage: createJSONStorage(() => localStorage),
       version: 3,
-      migrate: (persistedState: any, version: number) => {
+      migrate: (persistedState: unknown, version: number) => {
+        const state = persistedState as Partial<AppState>;
         if (version === 0) {
           // Migration for v0 to v1: Add headingScale and contentPadding
-          if (persistedState.cardStyle) {
-            persistedState.cardStyle = {
-              ...persistedState.cardStyle,
-              headingScale: persistedState.cardStyle.headingScale ?? 1.0,
-              contentPadding: persistedState.cardStyle.contentPadding ?? 24,
+          if (state.cardStyle) {
+            state.cardStyle = {
+              ...state.cardStyle,
+              headingScale: state.cardStyle.headingScale ?? 1.0,
+              contentPadding: state.cardStyle.contentPadding ?? 24,
             };
           }
         }
         if (version <= 1) {
           // Migration for v1 to v2: Add autoHeight and independent heading sizes
-          if (persistedState.cardStyle) {
-            persistedState.cardStyle = {
-              ...persistedState.cardStyle,
-              autoHeight: persistedState.cardStyle.autoHeight ?? false,
-              h1FontSize: persistedState.cardStyle.h1FontSize ?? 32,
-              h2FontSize: persistedState.cardStyle.h2FontSize ?? 24,
-              h3FontSize: persistedState.cardStyle.h3FontSize ?? 20,
+          if (state.cardStyle) {
+            state.cardStyle = {
+              ...state.cardStyle,
+              autoHeight: state.cardStyle.autoHeight ?? false,
+              h1FontSize: state.cardStyle.h1FontSize ?? 32,
+              h2FontSize: state.cardStyle.h2FontSize ?? 24,
+              h3FontSize: state.cardStyle.h3FontSize ?? 20,
             };
           }
         }
         if (version <= 2) {
           // Migration for v2 to v3: Add cardPadding and cardPaddingSync
-          if (persistedState.cardStyle) {
-            persistedState.cardStyle = {
-              ...persistedState.cardStyle,
-              cardPadding: persistedState.cardStyle.cardPadding ?? {
-                top: persistedState.cardStyle.contentPadding ?? 32,
-                right: persistedState.cardStyle.contentPadding ?? 32,
-                bottom: persistedState.cardStyle.contentPadding ?? 32,
-                left: persistedState.cardStyle.contentPadding ?? 32
+          if (state.cardStyle) {
+            state.cardStyle = {
+              ...state.cardStyle,
+              cardPadding: state.cardStyle.cardPadding ?? {
+                top: state.cardStyle.contentPadding ?? 32,
+                right: state.cardStyle.contentPadding ?? 32,
+                bottom: state.cardStyle.contentPadding ?? 32,
+                left: state.cardStyle.contentPadding ?? 32
               },
-              cardPaddingSync: persistedState.cardStyle.cardPaddingSync ?? true,
+              cardPaddingSync: state.cardStyle.cardPaddingSync ?? true,
             };
           }
         }
-        return persistedState;
+        return state;
       },
       partialize: (state) => ({
         theme: state.theme,

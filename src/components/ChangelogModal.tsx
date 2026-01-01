@@ -5,12 +5,23 @@ import { useStore } from '../store';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 interface ChangelogModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+const PaddingIcon = ({ side }: { side: 'top' | 'right' | 'bottom' | 'left' | 'all' }) => (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-70">
+    <rect x="2.5" y="2.5" width="9" height="9" rx="1" stroke="currentColor" strokeOpacity="0.3" strokeDasharray="2 2" />
+    {side === 'top' && <path d="M3 2H11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />}
+    {side === 'bottom' && <path d="M3 12H11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />}
+    {side === 'left' && <path d="M2 3V11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />}
+    {side === 'right' && <path d="M12 3V11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />}
+    {side === 'all' && <rect x="2.5" y="2.5" width="9" height="9" rx="1" stroke="currentColor" strokeWidth="1.5" />}
+  </svg>
+);
 
 export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
   const t = useTranslation();
@@ -18,7 +29,7 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
   const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
 
   // Update data
-  const updates = [
+  const updates = useMemo(() => [
     {
       version: 'v1.8.0',
       date: '2025-12-31',
@@ -255,13 +266,15 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
       },
       demo: 'bg-layout'
     }
-  ];
+  ], []);
 
   useEffect(() => {
     if (isOpen && !selectedVersion) {
-      setSelectedVersion(updates[0].version);
+      setTimeout(() => {
+        setSelectedVersion(updates[0].version);
+      }, 0);
     }
-  }, [isOpen]);
+  }, [isOpen, selectedVersion, updates]);
 
   const currentUpdate = updates.find(u => u.version === selectedVersion) || updates[0];
 
@@ -272,7 +285,7 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8"
+          className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-8"
         >
           {/* Standard Backdrop with Noise for Banding Prevention */}
           <motion.div 
@@ -313,7 +326,7 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
             <div className="absolute inset-0 bg-white/40 dark:bg-[#0a0a0a]/90 -z-10" />
             
             {/* Left Sidebar: Version List */}
-            <div className="w-full md:w-64 flex-shrink-0 bg-black/5 dark:bg-white/5 border-b md:border-b-0 md:border-r border-black/5 dark:border-white/5 flex flex-col">
+            <div className="w-full md:w-64 shrink-0 bg-black/5 dark:bg-white/5 border-b md:border-b-0 md:border-r border-black/5 dark:border-white/5 flex flex-col">
                <div className="p-6 pb-4">
                   <div className="flex items-center gap-2 mb-1">
                     <Sparkles size={20} className="text-blue-500" />
@@ -741,16 +754,6 @@ const DemoPaddingCustomization = () => {
     }
   };
 
-  const PaddingIcon = ({ side }: { side: 'top' | 'right' | 'bottom' | 'left' | 'all' }) => (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-70">
-      <rect x="2.5" y="2.5" width="9" height="9" rx="1" stroke="currentColor" strokeOpacity="0.3" strokeDasharray="2 2" />
-      {side === 'top' && <path d="M3 2H11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />}
-      {side === 'bottom' && <path d="M3 12H11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />}
-      {side === 'left' && <path d="M2 3V11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />}
-      {side === 'right' && <path d="M12 3V11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />}
-      {side === 'all' && <rect x="2.5" y="2.5" width="9" height="9" rx="1" stroke="currentColor" strokeWidth="1.5" />}
-    </svg>
-  );
 
   return (
     <div className="w-full max-w-md space-y-8">
@@ -991,7 +994,7 @@ const DemoMultiLineList = () => {
 
       <div className="bg-white dark:bg-[#151515] rounded-2xl border border-black/5 dark:border-white/5 shadow-sm overflow-hidden">
         {/* Editor-like Toolbar */}
-        <div className="px-4 py-2 border-b border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02] flex items-center justify-between">
+        <div className="px-4 py-2 border-b border-black/5 dark:border-white/5 bg-black/2 dark:bg-white/2 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsList(!isList)}
@@ -1045,6 +1048,9 @@ const DemoMarkdown = () => {
       <div className="flex-1 flex flex-col gap-2">
         <div className="text-xs font-bold text-slate-500 uppercase">{language === 'zh' ? '编辑器' : 'Editor'}</div>
         <textarea
+          id="demo-markdown-input"
+          name="demoMarkdown"
+          aria-label={language === 'zh' ? "Markdown 演示输入" : "Markdown Demo Input"}
           value={text}
           onChange={(e) => setText(e.target.value)}
           className="w-full h-full p-4 text-sm font-mono rounded-xl bg-white dark:bg-[#151515] border border-transparent focus:border-blue-500/50 outline-none shadow-sm resize-none transition-all"
@@ -1057,7 +1063,7 @@ const DemoMarkdown = () => {
         <div className="text-xs font-bold text-slate-500 uppercase">{language === 'zh' ? '卡片预览' : 'Card Preview'}</div>
         <div className="w-full h-full rounded-xl overflow-hidden relative shadow-xl group">
           {/* Card Background Mock */}
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-800 dark:to-slate-900" />
+          <div className="absolute inset-0 bg-linear-to-br from-slate-200 to-slate-300 dark:from-slate-800 dark:to-slate-900" />
           
           {/* Card Content Mock */}
           <div className="absolute inset-4 bg-white dark:bg-[#1a1a1a] rounded-lg shadow-lg overflow-y-auto custom-scrollbar">
@@ -1123,12 +1129,12 @@ const DemoExportNaming = () => {
         <AnimatePresence>
           {isOpen && (
             <>
-              <div className="fixed inset-0 z-[120]" onClick={() => setIsOpen(false)} />
+              <div className="fixed inset-0 z-120" onClick={() => setIsOpen(false)} />
               <motion.div
                 initial={{ opacity: 0, y: 4, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 4, scale: 0.95 }}
-                className="absolute left-0 right-0 top-full mt-1 z-[121] bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden py-1"
+                className="absolute left-0 right-0 top-full mt-1 z-121 bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden py-1"
               >
                 {options.map((option) => (
                   <button
@@ -1164,7 +1170,7 @@ const DemoExportNaming = () => {
   };
 
   const getLabel = (part: string) => {
-    const labels: any = { 
+    const labels: Record<string, string> = { 
       'prefix': language === 'zh' ? '前缀' : 'Prefix', 
       'date': language === 'zh' ? '日期' : 'Date', 
       'custom': language === 'zh' ? '自定义名称' : 'Custom Name', 
@@ -1235,7 +1241,7 @@ const DemoExportNaming = () => {
         ].map((m) => (
           <button
             key={m.id}
-            onClick={() => setNamingMode(m.id as any)}
+            onClick={() => setNamingMode(m.id as 'system' | 'custom')}
             className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
               namingMode === m.id ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white'
             }`}
@@ -1491,8 +1497,10 @@ const DemoResetUndo = () => {
     if (isActive && countdown > 0) {
       timer = setInterval(() => setCountdown(c => c - 1), 1000);
     } else if (countdown === 0) {
-      setIsActive(false);
-      setShowToast(false);
+      setTimeout(() => {
+        setIsActive(false);
+        setShowToast(false);
+      }, 0);
     }
     return () => clearInterval(timer);
   }, [isActive, countdown]);
@@ -1539,7 +1547,7 @@ const DemoResetUndo = () => {
             className="bg-white/80 dark:bg-black/80 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-2xl rounded-full px-6 py-4 flex items-center gap-6 w-full absolute"
           >
             {/* Countdown Circle */}
-            <div className="relative w-12 h-12 flex-shrink-0 flex items-center justify-center">
+            <div className="relative w-12 h-12 shrink-0 flex items-center justify-center">
               <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 48 48">
                 <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="3" fill="transparent" className="text-black/5 dark:text-white/5" />
                 <motion.circle
@@ -1576,7 +1584,7 @@ const DemoResetUndo = () => {
               </button>
               <button
                 onClick={() => setShowToast(false)}
-                className="p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors text-black dark:text-white opacity-40 hover:opacity-100 flex-shrink-0"
+                className="p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors text-black dark:text-white opacity-40 hover:opacity-100 shrink-0"
               >
                 <Plus size={16} className="rotate-45" />
               </button>
@@ -1618,7 +1626,7 @@ const DemoPresets = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md"
+            className="fixed inset-0 z-120 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md"
             onClick={() => setPreviewIndex(null)}
           >
             <motion.div
@@ -1883,7 +1891,7 @@ const DemoResponsiveLayout = () => {
           {/* The Card */}
           <motion.div
             layout
-            className="w-24 aspect-[3/4] bg-white dark:bg-[#202020] rounded-lg shadow-lg border border-black/5 dark:border-white/10 flex flex-col p-2 gap-2 z-10"
+            className="w-24 aspect-3/4 bg-white dark:bg-[#202020] rounded-lg shadow-lg border border-black/5 dark:border-white/10 flex flex-col p-2 gap-2 z-10"
           >
             <div className="w-8 h-1 bg-blue-500 rounded-full" />
             <div className="space-y-1">
@@ -1966,7 +1974,7 @@ const DemoAutoHeight = () => {
         ].map((m) => (
           <button
             key={m.id}
-            onClick={() => setMode(m.id as any)}
+            onClick={() => setMode(m.id as 'portrait' | 'landscape' | 'auto')}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
               mode === m.id 
                 ? 'bg-blue-500 text-white shadow-md' 
@@ -2037,7 +2045,7 @@ const DemoAutoHeight = () => {
 
           {/* Cut-off indicator for fixed modes */}
           {mode !== 'auto' && (
-            <div className="absolute bottom-10 left-0 right-0 h-12 bg-gradient-to-t from-white dark:from-[#1a1a1a] to-transparent pointer-events-none" />
+            <div className="absolute bottom-10 left-0 right-0 h-12 bg-linear-to-t from-white dark:from-[#1a1a1a] to-transparent pointer-events-none" />
           )}
         </motion.div>
 
@@ -2076,7 +2084,7 @@ const DemoPreviewZoom = () => {
         <span className="text-xs font-mono font-bold min-w-[4ch]">{Math.round(zoom * 100)}%</span>
       </div>
 
-      <div className="w-full max-w-lg aspect-[16/9] bg-slate-200/30 dark:bg-white/5 rounded-2xl border border-black/5 overflow-hidden flex items-center justify-center relative">
+      <div className="w-full max-w-lg aspect-video bg-slate-200/30 dark:bg-white/5 rounded-2xl border border-black/5 overflow-hidden flex items-center justify-center relative">
         <motion.div 
           animate={{ scale: zoom }}
           className="w-40 h-56 bg-white dark:bg-[#1a1a1a] rounded-xl shadow-2xl border border-black/5 dark:border-white/10 p-5 flex flex-col gap-3"
@@ -2131,7 +2139,7 @@ const DemoCardPadding = () => {
         <span className="text-xs font-mono font-bold min-w-[3ch]">{padding}px</span>
       </div>
 
-      <div className="w-full max-w-lg aspect-[16/9] bg-slate-200/30 dark:bg-white/5 rounded-2xl border border-black/5 flex items-center justify-center">
+      <div className="w-full max-w-lg aspect-video bg-slate-200/30 dark:bg-white/5 rounded-2xl border border-black/5 flex items-center justify-center">
         <div className="w-48 h-64 bg-slate-300 dark:bg-slate-800 rounded-xl relative overflow-hidden shadow-lg">
            {/* Inner Card representing content area */}
            <motion.div 
@@ -2181,12 +2189,12 @@ const DemoSmartPagination = () => {
         {language === 'zh' ? '智能自动分页演示' : 'Smart Auto-Pagination Demo'}
       </div>
 
-      <div className="relative w-full max-w-lg aspect-[16/10] bg-slate-200/50 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/5 overflow-hidden p-6 flex flex-col gap-4">
+      <div className="relative w-full max-w-lg aspect-16/10 bg-slate-200/50 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/5 overflow-hidden p-6 flex flex-col gap-4">
         {/* Mock Toolbar */}
         <div className="flex items-center gap-2 p-2 bg-white dark:bg-black/40 rounded-xl shadow-sm border border-black/5 dark:border-white/10">
           <div className="w-4 h-4 rounded bg-slate-200 dark:bg-white/10" />
           <div className="w-4 h-4 rounded bg-slate-200 dark:bg-white/10" />
-          <div className="w-[1px] h-4 bg-black/10 dark:bg-white/10 mx-1" />
+          <div className="w-px h-4 bg-black/10 dark:bg-white/10 mx-1" />
           <button 
             onClick={handlePaginate}
             disabled={isPaginating}

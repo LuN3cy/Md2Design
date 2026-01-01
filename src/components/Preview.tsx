@@ -59,6 +59,7 @@ export const Preview = () => {
 
   useEffect(() => {
     if (previewZoom > 0) {
+      // eslint-disable-next-line
       setScale(previewZoom);
     } else {
       setScale(autoScale);
@@ -261,7 +262,7 @@ const Card = ({
         height: cardStyle.autoHeight ? 'auto' : height * scale,
         transition: 'all 0.3s ease'
       }} 
-      className="relative flex-shrink-0"
+      className="relative shrink-0"
     >
       <div 
         style={{ 
@@ -276,7 +277,7 @@ const Card = ({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.1 }}
-          className={`relative shadow-2xl overflow-hidden flex flex-col flex-shrink-0 group ${isResetting ? 'transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)]' : ''}`}
+          className={`relative shadow-2xl overflow-hidden flex flex-col shrink-0 group ${isResetting ? 'transition-all duration-1000 ease-in-out' : ''}`}
           style={outerStyle}
           id={`card-${index}`}
           onClick={() => setSelectedImageId(null)} // Deselect image when clicking card background
@@ -284,7 +285,7 @@ const Card = ({
           {renderOuterBackground()}
 
           <div 
-            className={`relative w-full h-full flex flex-col overflow-hidden ${isResetting ? 'transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)]' : ''}`}
+            className={`relative w-full h-full flex flex-col overflow-hidden ${isResetting ? 'transition-all duration-1000 ease-in-out' : ''}`}
             style={innerStyle}
           >
             {renderInnerBackground()}
@@ -294,7 +295,7 @@ const Card = ({
                 Default template effect:
             */}
             {cardStyle.template === 'default' && (
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-pink-400 to-orange-300 blur-3xl opacity-20 -z-0 pointer-events-none" />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-br from-pink-400 to-orange-300 blur-3xl opacity-20 z-0 pointer-events-none" />
             )}
             
             {/* Images Layer */}
@@ -357,7 +358,7 @@ const Card = ({
 
             <div className="relative z-10 h-full flex flex-col pointer-events-none">
               <div 
-                className="prose prose-sm max-w-none flex-1 pointer-events-auto overflow-hidden break-words [&>*:first-child]:mt-0"
+                className="prose prose-sm max-w-none flex-1 pointer-events-auto overflow-hidden wrap-break-word [&>*:first-child]:mt-0"
                 style={{ 
                   padding: 0,
                   maxHeight: cardStyle.autoHeight ? 'none' : '100%', // Ensure strict clipping to prevent overlap
@@ -447,7 +448,7 @@ const Card = ({
                             borderLeftColor: cardStyle.blockquoteBorderColor, 
                             backgroundColor: cardStyle.blockquoteBackgroundColor 
                           }} 
-                          className="border-l-4 pl-4 py-2 my-4 italic opacity-90 rounded-r-lg rounded-bl-sm [&>p:last-child]:mb-0 [&>p:first-child]:mt-0 break-words" 
+                          className="border-l-4 pl-4 py-2 my-4 italic opacity-90 rounded-r-lg rounded-bl-sm [&>p:last-child]:mb-0 [&>p:first-child]:mt-0 wrap-break-word" 
                           {...props} 
                         />
                       ),
@@ -488,7 +489,7 @@ const Card = ({
                             {children}
                           </code>
                         ) : (
-                          <code style={{ backgroundColor: cardStyle.codeBackgroundColor, fontSize: '0.8em' }} className="block rounded-lg p-4 font-mono my-4 overflow-x-auto whitespace-pre-wrap break-words" {...props}>
+                          <code style={{ backgroundColor: cardStyle.codeBackgroundColor, fontSize: '0.8em' }} className="block rounded-lg p-4 font-mono my-4 overflow-x-auto whitespace-pre-wrap wrap-break-word" {...props}>
                             {children}
                           </code>
                         );

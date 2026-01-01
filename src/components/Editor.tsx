@@ -17,11 +17,15 @@ export const Editor = () => {
   // Auto-paginate when switching from auto-height to fixed-height mode
   useEffect(() => {
     if (prevAutoHeightRef.current && !cardStyle.autoHeight && markdown.length > 500) {
-      const paginated = paginateMarkdown(markdown, cardStyle);
+      const paginatedArr = paginateMarkdown(markdown, cardStyle);
+      const paginated = paginatedArr.join('\n\n---\n\n');
       if (paginated !== markdown) {
-        setMarkdown(paginated);
-        setShowPaginationToast(true);
-        setTimeout(() => setShowPaginationToast(false), 4000);
+        // Defer state update to avoid cascading render warning
+        setTimeout(() => {
+          setMarkdown(paginated);
+          setShowPaginationToast(true);
+          setTimeout(() => setShowPaginationToast(false), 4000);
+        }, 0);
       }
     }
     prevAutoHeightRef.current = cardStyle.autoHeight;
@@ -51,7 +55,7 @@ export const Editor = () => {
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selected = markdown.substring(start, end);
-    const escaped = marker.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const escaped = marker.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
     const regex = new RegExp(`^${escaped}(.*)${escaped}$`);
     
     if (regex.test(selected)) {
@@ -79,7 +83,7 @@ export const Editor = () => {
     const end = textarea.selectionEnd;
     
     // Find line start/end
-    let lineStart = markdown.lastIndexOf('\n', start - 1) + 1;
+    const lineStart = markdown.lastIndexOf('\n', start - 1) + 1;
     let lineEnd = markdown.indexOf('\n', end);
     if (lineEnd === -1) lineEnd = markdown.length;
     
@@ -227,7 +231,8 @@ export const Editor = () => {
              
              // Auto-paginate if content is long
              if (!cardStyle.autoHeight && newFullText.length > 500) {
-                 const paginated = paginateMarkdown(newFullText, cardStyle);
+                 const paginatedArr = paginateMarkdown(newFullText, cardStyle);
+                 const paginated = paginatedArr.join('\n\n---\n\n');
                  if (paginated !== newFullText) {
                      setMarkdown(paginated);
                      setShowPaginationToast(true);
@@ -263,7 +268,8 @@ export const Editor = () => {
         const newFullText = markdown.substring(0, start) + plainText + markdown.substring(end);
         
         if (!cardStyle.autoHeight && newFullText.length > 500) {
-            const paginated = paginateMarkdown(newFullText, cardStyle);
+            const paginatedArr = paginateMarkdown(newFullText, cardStyle);
+            const paginated = paginatedArr.join('\n\n---\n\n');
             if (paginated !== newFullText) {
                 setMarkdown(paginated);
                 setShowPaginationToast(true);
@@ -305,34 +311,34 @@ export const Editor = () => {
 
             {/* Toolbar */}
             <div className="flex items-center gap-0.5 p-2 border-b border-black/10 dark:border-white/10 overflow-x-auto custom-scrollbar no-scrollbar">
-              <button onClick={() => toggleInlineStyle('**')} title="Bold" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0">
+              <button onClick={() => toggleInlineStyle('**')} title="Bold" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 shrink-0">
                 <Bold size={16} />
               </button>
-              <button onClick={() => toggleInlineStyle('*')} title="Italic" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0">
+              <button onClick={() => toggleInlineStyle('*')} title="Italic" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 shrink-0">
                 <Italic size={16} />
               </button>
-              <button onClick={() => toggleInlineStyle('~~')} title="Strikethrough" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0">
+              <button onClick={() => toggleInlineStyle('~~')} title="Strikethrough" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 shrink-0">
                 <Strikethrough size={16} />
               </button>
-              <button onClick={() => toggleBlockStyle('#')} title="H1" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0">
+              <button onClick={() => toggleBlockStyle('#')} title="H1" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 shrink-0">
                 <Heading1 size={16} />
               </button>
-              <button onClick={() => toggleBlockStyle('##')} title="H2" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0">
+              <button onClick={() => toggleBlockStyle('##')} title="H2" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 shrink-0">
                 <Heading2 size={16} />
               </button>
-              <button onClick={() => toggleBlockStyle('-')} title="List" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0">
+              <button onClick={() => toggleBlockStyle('-')} title="List" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 shrink-0">
                 <List size={16} />
               </button>
-              <button onClick={() => toggleBlockStyle('>')} title="Quote" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0">
+              <button onClick={() => toggleBlockStyle('>')} title="Quote" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 shrink-0">
                 <Quote size={16} />
               </button>
-              <button onClick={() => insertText('[', '](url)')} title="Link" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0">
+              <button onClick={() => insertText('[', '](url)')} title="Link" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 shrink-0">
                 <Link size={16} />
               </button>
               <button
                 onClick={() => fileInputRef.current?.click()}
                 title="Image"
-                className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0"
+                className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 shrink-0"
               >
                 <ImageIcon size={16} />
               </button>
@@ -348,7 +354,7 @@ export const Editor = () => {
                   e.target.value = '';
                 }}
               />
-              <div className="w-[1px] h-4 bg-black/10 dark:bg-white/10 mx-1 flex-shrink-0" />
+              <div className="w-px h-4 bg-black/10 dark:bg-white/10 mx-1 shrink-0" />
               <button
                 onClick={() => {
                    // If in auto-height mode, switch to portrait first to enable pagination
@@ -358,17 +364,18 @@ export const Editor = () => {
                    
                    // Wait for state to update (using setTimeout for simple sync)
                    setTimeout(() => {
-                     const currentStyle = useStore.getState().cardStyle;
-                     const paginated = paginateMarkdown(markdown, currentStyle);
-                     if (paginated !== markdown) {
+                      const currentStyle = useStore.getState().cardStyle;
+                      const paginatedArr = paginateMarkdown(markdown, currentStyle);
+                      const paginated = paginatedArr.join('\n\n---\n\n');
+                      if (paginated !== markdown) {
                          setMarkdown(paginated);
                          setShowPaginationToast(true);
                          setTimeout(() => setShowPaginationToast(false), 4000);
                      }
                    }, 0);
                 }}
-                title="自动分页"
-                className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-90 hover:opacity-100 group flex-shrink-0"
+                title={t.autoPaginate}
+                className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-90 hover:opacity-100 group shrink-0"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path 
@@ -391,6 +398,9 @@ export const Editor = () => {
             </div>
             
             <textarea
+              id="markdown-editor"
+              name="markdown"
+              aria-label="Markdown Editor"
               ref={textareaRef}
               className="flex-1 w-full h-full bg-transparent resize-none focus:outline-none font-mono text-sm leading-relaxed p-4 text-inherit placeholder-inherit/50 custom-scrollbar"
               value={markdown}
@@ -428,20 +438,20 @@ export const Editor = () => {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[70] bg-black/80 dark:bg-white/90 text-white dark:text-black px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 backdrop-blur-md"
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-70 bg-black/80 dark:bg-white/90 text-white dark:text-black px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 backdrop-blur-md"
           >
             <div className="bg-green-500 rounded-full p-1">
               <Check size={14} className="text-white" strokeWidth={3} />
             </div>
             <div className="flex flex-col">
-                <span className="text-sm font-bold">已自动分页</span>
-                <span className="text-[10px] opacity-80">内容过长，已按页面高度自动切割。可用 "---" 手动调整。</span>
+                <span className="text-sm font-bold">{t.autoPaginatedToast}</span>
+                <span className="text-[10px] opacity-80">{t.autoPaginatedMsg}</span>
             </div>
             <button 
                 onClick={() => setShowPaginationToast(false)}
                 className="ml-2 opacity-50 hover:opacity-100 p-1"
             >
-                <ChevronLeft className="rotate-[-90deg]" size={14} />
+                <ChevronLeft className="-rotate-90" size={14} />
             </button>
           </motion.div>
         )}

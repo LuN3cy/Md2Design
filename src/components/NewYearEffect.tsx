@@ -6,6 +6,27 @@ import { X, Sparkles } from 'lucide-react';
 export const NewYearEffect = () => {
   const [isVisible, setIsVisible] = useState(false);
 
+  const fireworks = () => {
+    const duration = 10 * 1000; // 烟花持续时间也改为10s
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+    const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+    const interval: ReturnType<typeof setInterval> = setInterval(function() {
+      const timeLeft = animationEnd - Date.now();
+
+      if (timeLeft <= 0) {
+        return clearInterval(interval);
+      }
+
+      const particleCount = 50 * (timeLeft / duration);
+      // since particles fall down, start a bit higher than random
+      confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+      confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+    }, 250);
+  };
+
   useEffect(() => {
     // 每次刷新页面都弹出
     const startTimer = setTimeout(() => {
@@ -24,26 +45,6 @@ export const NewYearEffect = () => {
     };
   }, []);
 
-  const fireworks = () => {
-    const duration = 10 * 1000; // 烟花持续时间也改为10s
-    const animationEnd = Date.now() + duration;
-    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-
-    const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
-
-    const interval: any = setInterval(function() {
-      const timeLeft = animationEnd - Date.now();
-
-      if (timeLeft <= 0) {
-        return clearInterval(interval);
-      }
-
-      const particleCount = 50 * (timeLeft / duration);
-      // since particles fall down, start a bit higher than random
-      confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
-      confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
-    }, 250);
-  };
 
   const handleClose = () => {
     setIsVisible(false);
@@ -56,11 +57,11 @@ export const NewYearEffect = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] pointer-events-auto"
+          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-100 pointer-events-auto"
         >
           <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-yellow-500/30 shadow-2xl rounded-2xl px-6 py-4 flex items-center gap-4 relative overflow-hidden group">
             {/* Background Sparkle Effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 via-transparent to-red-500/10 opacity-50 pointer-events-none" />
+            <div className="absolute inset-0 bg-linear-to-r from-yellow-500/10 via-transparent to-red-500/10 opacity-50 pointer-events-none" />
             
             <div className="flex items-center gap-3 relative z-10">
               <div className="w-10 h-10 rounded-full bg-yellow-500 flex items-center justify-center text-white shadow-lg animate-bounce">
@@ -85,7 +86,7 @@ export const NewYearEffect = () => {
             </button>
 
             {/* Shine effect */}
-            <div className="absolute top-0 -inset-full h-full w-1/2 z-5 block transform -skew-x-12 bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:animate-shine" />
+            <div className="absolute top-0 -inset-full h-full w-1/2 z-5 block transform -skew-x-12 bg-linear-to-r from-transparent via-white/20 to-transparent group-hover:animate-shine" />
           </div>
         </motion.div>
       )}
