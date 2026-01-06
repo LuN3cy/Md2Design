@@ -20,6 +20,26 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
   // Update data
   const updates = [
     {
+      version: 'v1.8.2',
+      date: '2026-01-06',
+      title: {
+        en: 'Smart Snap & Page Stability',
+        zh: '智能吸附 & 页面稳定性'
+      },
+      changes: {
+        en: [
+          'Enhanced Image Snapping: Redesigned centering snap logic with breakout support for professional editing experience.',
+          'Zero-Drift Locking: Images now lock precisely on the center axis with zero jitter within the threshold.',
+          'Problem Feedback: @迷迭香741910496',
+        ],
+        zh: [
+          '智能图片吸附：重构居中吸附逻辑，支持“跳跃式脱离”，提供专业级的设计编辑体验。',
+          '零抖动锁定：图片在吸附阈值内实现绝对静止锁定，彻底消除拖拽过程中的视觉抖动。',
+          '问题反馈：@迷迭香741910496',
+        ]
+      }
+    },
+    {
       version: 'v1.8.1',
       date: '2026-01-02',
       title: {

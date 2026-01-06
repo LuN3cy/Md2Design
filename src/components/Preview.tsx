@@ -13,7 +13,6 @@ export const Preview = () => {
   const { markdown, setIsScrolled, setActiveCardIndex, cardStyle, isEditorOpen, isSidebarOpen, previewZoom, setPreviewZoom } = useStore();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
-  
   const { width, height } = getCardDimensions(cardStyle);
   const [scale, setScale] = useState(1);
   const [autoScale, setAutoScale] = useState(1);
@@ -169,6 +168,9 @@ const Card = ({
   setSelectedImageId: (id: string | null) => void
 }) => {
   const { cardStyle, cardImages, updateCardImage, removeCardImage, isResetting } = useStore();
+  const [isSnapX, setIsSnapX] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [draggingId, setDraggingId] = useState<string | null>(null);
   
   // Dynamic styles based on settings
   const outerStyle = {
@@ -259,7 +261,7 @@ const Card = ({
       style={{ 
         width: width * scale, 
         height: cardStyle.autoHeight ? 'auto' : height * scale,
-        transition: 'all 0.3s ease'
+        transition: draggingId ? 'none' : 'all 0.3s ease'
       }} 
       className="relative flex-shrink-0"
     >
@@ -269,14 +271,14 @@ const Card = ({
           height: cardStyle.autoHeight ? 'auto' : height,
           transform: `scale(${scale})`,
           transformOrigin: 'top left',
-          transition: 'transform 0.3s ease'
+          transition: draggingId ? 'none' : 'transform 0.3s ease'
         }}
       >
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.1 }}
-          className={`relative shadow-2xl overflow-hidden flex flex-col flex-shrink-0 group ${isResetting ? 'transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)]' : ''}`}
+          className={`relative shadow-2xl overflow-hidden flex flex-col flex-shrink-0 group ${isResetting && !draggingId ? 'transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)]' : ''}`}
           style={outerStyle}
           id={`card-${index}`}
           onClick={() => setSelectedImageId(null)} // Deselect image when clicking card background
@@ -284,7 +286,7 @@ const Card = ({
           {renderOuterBackground()}
 
           <div 
-            className={`relative w-full h-full flex flex-col overflow-hidden ${isResetting ? 'transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)]' : ''}`}
+            className={`relative w-full h-full flex flex-col overflow-hidden ${isResetting && !draggingId ? 'transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)]' : ''}`}
             style={innerStyle}
           >
             {renderInnerBackground()}
@@ -298,62 +300,108 @@ const Card = ({
             )}
             
             {/* Images Layer */}
-            {images.map((img) => (
-              <Rnd
-                key={img.id}
-                size={{ width: img.width, height: img.height }}
-                position={{ x: img.x, y: img.y }}
-                onDragStop={(_, d) => {
-                  updateCardImage(index, img.id, { x: d.x, y: d.y });
-                }}
-                onResizeStop={(_, __, ref, ___, position) => {
-                  updateCardImage(index, img.id, {
-                    width: parseInt(ref.style.width),
-                    height: parseInt(ref.style.height),
-                    ...position,
-                  });
-                }}
-                bounds="parent"
-                className={`z-20 ${selectedImageId === img.id ? 'ring-2 ring-blue-500' : 'hover:ring-1 hover:ring-blue-300/50'}`}
-                onClick={(e: ReactMouseEvent) => {
-                  e.stopPropagation();
-                  setSelectedImageId(img.id);
-                }}
-                data-html2canvas-ignore={selectedImageId === img.id ? undefined : undefined} 
-              >
-                <div className="relative w-full h-full group/img">
-                  <img 
-                    src={img.src} 
-                    className="w-full h-full object-cover pointer-events-none" 
-                    alt="added"
-                    style={{ 
-                        objectPosition: `${-img.crop.x}px ${-img.crop.y}px`,
-                        transform: `scale(${img.crop.scale})` 
-                    }}
-                  />
-                  
-                  {selectedImageId === img.id && (
-                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/80 text-white rounded-lg p-1 shadow-xl z-50 export-ignore">
-                        <button 
-                          className="p-1 hover:bg-white/20 rounded"
-                          title="Move Mode (Default)"
-                        >
-                          <Move size={14} />
-                        </button>
-                        <button 
-                          className="p-1 hover:bg-red-500/80 rounded text-red-300"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeCardImage(index, img.id);
-                          }}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                    </div>
-                  )}
-                </div>
-              </Rnd>
-            ))}
+            {images.map((img) => {
+              const isDragging = draggingId === img.id;
+              const displayX = isDragging ? dragOffset.x : img.x;
+              const displayY = isDragging ? dragOffset.y : img.y;
+
+              return (
+                <Rnd
+                  key={img.id}
+                  size={{ width: img.width, height: img.height }}
+                  position={{ x: displayX, y: displayY }}
+                  onDragStart={() => {
+                    setDraggingId(img.id);
+                    setDragOffset({ x: img.x, y: img.y });
+                  }}
+                  onDrag={(_, d) => {
+                     const centerX = (width - img.width) / 2;
+                     const threshold = 12; // 缩小阈值，更加精准
+                     
+                     let targetX = d.x;
+                     const isNearCenter = Math.abs(d.x - centerX) < threshold;
+                     
+                     if (isNearCenter) {
+                       targetX = centerX; // 强制锁定在中心
+                       if (!isSnapX) setIsSnapX(true);
+                     } else {
+                       if (isSnapX) setIsSnapX(false);
+                     }
+                     
+                     setDragOffset({ x: targetX, y: d.y });
+                   }}
+                   onDragStop={(_, d) => {
+                     const centerX = (width - img.width) / 2;
+                     const threshold = 12;
+                     let finalX = d.x;
+                     if (Math.abs(d.x - centerX) < threshold) {
+                       finalX = centerX;
+                     }
+                     updateCardImage(index, img.id, { x: finalX, y: d.y });
+                     setIsSnapX(false);
+                     setDraggingId(null);
+                   }}
+                   onResizeStop={(_, __, ref, ___, position) => {
+                     updateCardImage(index, img.id, {
+                       width: parseInt(ref.style.width),
+                       height: parseInt(ref.style.height),
+                       ...position,
+                     });
+                   }}
+                   bounds="parent"
+                   dragHandleClassName="drag-handle"
+                   style={{ 
+                     transition: isDragging ? 'none' : 'all 0.2s ease',
+                     zIndex: isDragging ? 50 : 20 
+                   }}
+                   className={`${selectedImageId === img.id ? 'ring-2 ring-blue-500' : 'hover:ring-1 hover:ring-blue-300/50'}`}
+                  onClick={(e: ReactMouseEvent) => {
+                    e.stopPropagation();
+                    setSelectedImageId(img.id);
+                  }}
+                >
+                  <div className="relative w-full h-full group/img drag-handle cursor-move">
+                    <img 
+                      src={img.src} 
+                      className="w-full h-full object-cover pointer-events-none" 
+                      alt="added"
+                      style={{ 
+                          objectPosition: `${-img.crop.x}px ${-img.crop.y}px`,
+                          transform: `scale(${img.crop.scale})` 
+                      }}
+                    />
+                    
+                    {selectedImageId === img.id && (
+                      <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/80 text-white rounded-lg p-1 shadow-xl z-50 export-ignore">
+                          <button 
+                            className="p-1 hover:bg-white/20 rounded"
+                            title="Move Mode (Default)"
+                          >
+                            <Move size={14} />
+                          </button>
+                          <button 
+                            className="p-1 hover:bg-red-500/80 rounded text-red-300"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeCardImage(index, img.id);
+                            }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                      </div>
+                    )}
+                  </div>
+                </Rnd>
+              );
+            })}
+
+            {/* Snap Guides */}
+            {isSnapX && (
+              <div 
+                className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-blue-500/50 z-30 pointer-events-none"
+                style={{ height: '100%' }}
+              />
+            )}
 
             <div className="relative z-10 h-full flex flex-col pointer-events-none">
               <div 

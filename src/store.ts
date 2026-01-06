@@ -429,21 +429,13 @@ export const useStore = create<AppState>()(
         // but easier to just use hex and assume browser handles or user provides rgba.
         // Actually user provides hex color usually. We need to apply opacity.
         // Let's assume color is HEX.
-        let r = 0, g = 0, b = 0;
-        if (color.startsWith('#')) {
-          const hex = color.substring(1);
-          if (hex.length === 3) {
-            r = parseInt(hex[0] + hex[0], 16);
-            g = parseInt(hex[1] + hex[1], 16);
-            b = parseInt(hex[2] + hex[2], 16);
-          } else if (hex.length === 6) {
-            r = parseInt(hex.substring(0, 2), 16);
-            g = parseInt(hex.substring(2, 4), 16);
-            b = parseInt(hex.substring(4, 6), 16);
-          }
-        }
-        
-        newStyle.shadow = `${x}px ${y}px ${blur}px ${spread}px rgba(${r}, ${g}, ${b}, ${opacity})`;
+  const [r, g, b] = color.startsWith('#') 
+    ? (color.length === 4 
+        ? [parseInt(color[1] + color[1], 16), parseInt(color[2] + color[2], 16), parseInt(color[3] + color[3], 16)]
+        : [parseInt(color.substring(1, 3), 16), parseInt(color.substring(3, 5), 16), parseInt(color.substring(5, 7), 16)])
+    : [0, 0, 0];
+  
+  newStyle.shadow = `${x}px ${y}px ${blur}px ${spread}px rgba(${r}, ${g}, ${b}, ${opacity})`;
       }
     }
 
@@ -491,7 +483,19 @@ export const useStore = create<AppState>()(
   deletePreset: (id) => set((state) => ({
     presets: state.presets.filter((p) => p.id !== id)
   })),
-  applyPreset: (style) => set({ cardStyle: JSON.parse(JSON.stringify(style)) }),
+  applyPreset: (style) => {
+    const mergedStyle = {
+      ...INITIAL_CARD_STYLE,
+      ...style,
+      watermark: { ...INITIAL_CARD_STYLE.watermark, ...(style.watermark || {}) },
+      pageNumber: { ...INITIAL_CARD_STYLE.pageNumber, ...(style.pageNumber || {}) },
+      backgroundConfig: { ...INITIAL_CARD_STYLE.backgroundConfig, ...(style.backgroundConfig || {}) },
+      cardBackgroundConfig: { ...INITIAL_CARD_STYLE.cardBackgroundConfig, ...(style.cardBackgroundConfig || {}) },
+      shadowConfig: { ...INITIAL_CARD_STYLE.shadowConfig, ...(style.shadowConfig || {}) },
+      cardPadding: { ...INITIAL_CARD_STYLE.cardPadding, ...(style.cardPadding || {}) },
+    };
+    set({ cardStyle: JSON.parse(JSON.stringify(mergedStyle)) });
+  },
 
   isEditorOpen: true,
   setIsEditorOpen: (isOpen) => set({ isEditorOpen: isOpen }),
@@ -503,6 +507,8 @@ export const useStore = create<AppState>()(
       storage: createJSONStorage(() => localStorage),
       version: 4,
       migrate: (persistedState: any, version: number) => {
+        if (!persistedState) return persistedState;
+
         if (version === 0) {
           // Migration for v0 to v1: Add headingScale and contentPadding
           if (persistedState.cardStyle) {
@@ -564,7 +570,8 @@ export const useStore = create<AppState>()(
         isSidebarOpen: state.isSidebarOpen,
       }),
       onRehydrateStorage: () => (state) => {
-        if (state?.theme === 'dark') {
+        if (!state) return;
+        if (state.theme === 'dark') {
           document.documentElement.classList.add('dark');
         } else {
           document.documentElement.classList.remove('dark');
