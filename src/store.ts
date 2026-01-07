@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { temporal } from 'zundo';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { getCardDimensions } from './utils/cardUtils';
 
 export type CustomFont = {
   name: string;
@@ -15,7 +16,12 @@ export type CardImage = {
   y: number;
   width: number;
   height: number;
+  naturalWidth?: number;
+  naturalHeight?: number;
   rotation: number;
+  resizeMode: 'cover' | 'contain' | 'fill' | 'none';
+  spacerId?: string;
+  isAttachedToSpacer?: boolean;
   crop: {
     x: number;
     y: number;
@@ -158,7 +164,7 @@ interface AppState {
   setActiveCardIndex: (index: number) => void;
 
   cardImages: Record<number, CardImage[]>;
-  addCardImage: (cardIndex: number, src: string, id?: string) => void;
+  addCardImage: (cardIndex: number, src: string, id?: string, spacerId?: string) => void;
   updateCardImage: (cardIndex: number, imageId: string, updates: Partial<CardImage>) => void;
   removeCardImage: (cardIndex: number, imageId: string) => void;
   
@@ -234,7 +240,7 @@ console.log('代码块也能完美显示！');
 - 功能 3`;
 
 const INITIAL_CARD_STYLE: CardStyle = {
-  fontFamily: 'Inter',
+  fontFamily: 'GoogleSans-Regular',
   backgroundColor: '#ffffff',
   textColor: '#000000',
   accentColor: '#3b82f6',
@@ -370,18 +376,56 @@ export const useStore = create<AppState>()(
   setActiveCardIndex: (index) => set({ activeCardIndex: index }),
 
   cardImages: {},
-  addCardImage: (cardIndex, src, id) => set((state) => {
+  addCardImage: (cardIndex, src, id, spacerId) => set((state) => {
     const images = state.cardImages[cardIndex] || [];
+    
+    // Create an image object to get natural dimensions
+    const img = new Image();
+    img.src = src;
+    
     const newImage: CardImage = {
       id: id || crypto.randomUUID(),
       src,
+      spacerId,
+      isAttachedToSpacer: !!spacerId,
       x: 50,
       y: 50,
-      width: 200, // Default width
-      height: 200, // Default height - will be adjusted by aspect ratio in render if needed, or by user
+      width: 200, // Initial default, will be updated if possible
+      height: 200,
+      naturalWidth: 200,
+      naturalHeight: 200,
       rotation: 0,
+      resizeMode: 'cover',
       crop: { x: 0, y: 0, scale: 1 },
     };
+
+    // If image is already loaded (from cache), or when it loads, we could update dimensions.
+    // However, since this is a setter, we can't easily do async here without changing the store structure.
+    // Let's assume the user will resize it anyway, or we can try to get dimensions if they're available.
+    if (img.complete) {
+      const { width: cardWidth } = getCardDimensions(state.cardStyle);
+      const targetWidth = cardWidth * 0.7;
+      const scale = targetWidth / img.naturalWidth;
+      
+      newImage.width = targetWidth;
+      newImage.height = img.naturalHeight * scale;
+      newImage.naturalWidth = img.naturalWidth;
+      newImage.naturalHeight = img.naturalHeight;
+    } else {
+      img.onload = () => {
+        const { width: cardWidth } = useStore.getState().cardStyle ? getCardDimensions(useStore.getState().cardStyle) : { width: 800 };
+        const targetWidth = cardWidth * 0.7;
+        const scale = targetWidth / img.naturalWidth;
+
+        useStore.getState().updateCardImage(cardIndex, newImage.id, {
+          width: targetWidth,
+          height: img.naturalHeight * scale,
+          naturalWidth: img.naturalWidth,
+          naturalHeight: img.naturalHeight
+        });
+      };
+    }
+
     return {
       cardImages: {
         ...state.cardImages,
@@ -505,9 +549,21 @@ export const useStore = create<AppState>()(
     {
       name: 'md2card-storage',
       storage: createJSONStorage(() => localStorage),
-      version: 4,
+      version: 5,
       migrate: (persistedState: any, version: number) => {
         if (!persistedState) return persistedState;
+
+        if (version <= 4) {
+          // Migration for v4 to v5: Add resizeMode to cardImages
+          if (persistedState.cardImages) {
+            Object.keys(persistedState.cardImages).forEach(cardIndex => {
+              persistedState.cardImages[cardIndex] = persistedState.cardImages[cardIndex].map((img: any) => ({
+                ...img,
+                resizeMode: img.resizeMode ?? 'cover'
+              }));
+            });
+          }
+        }
 
         if (version === 0) {
           // Migration for v0 to v1: Add headingScale and contentPadding

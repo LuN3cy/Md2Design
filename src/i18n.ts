@@ -187,7 +187,7 @@ const translations = {
     headingScale: 'H4~H6 标题字号',
     zoom: '预览缩放',
     editor: '编辑器',
-    editorHint: '支持飞书、Notion文档粘贴自动识别',
+    editorHint: '支持从飞书、Notion 等直接复制粘贴并自动转换',
     editorHint2: '使用 "---" 分割线可手动分页',
     addFont: '添加字体',
     fontName: '字体名称',

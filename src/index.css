@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -96,6 +97,32 @@
     }
   }
   --animate-mesh: mesh 20s ease infinite;
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  [contenteditable]:empty:before {
+    content: attr(data-placeholder);
+    color: currentColor;
+    opacity: 0.4;
+    cursor: text;
+  }
+
+  /* Fix for empty lines in rich text editor */
+  .prose p:empty::after,
+  .prose p > br:only-child::after {
+    content: '\00a0'; /* Non-breaking space to give height to empty paragraphs */
+    display: inline;
+  }
+  
+  /* Ensure paragraphs have a minimum height to be clickable */
 }
 
 @layer base {

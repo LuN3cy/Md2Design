@@ -11,6 +11,7 @@
     "tauri": "tauri"
   },
   "dependencies": {
+    "@tailwindcss/typography": "^0.5.19",
     "@types/file-saver": "^2.0.7",
     "@types/turndown": "^5.0.6",
     "clsx": "^2.1.1",
@@ -19,6 +20,7 @@
     "html-to-image": "^1.11.13",
     "jszip": "^3.10.1",
     "lucide-react": "^0.559.0",
+    "marked": "^17.0.1",
     "react": "^19.2.0",
     "react-colorful": "^5.6.1",
     "react-dom": "^19.2.0",

@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, memo, useMemo } from 'react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { useStore } from '../store';
 import { getCardDimensions } from '../utils/cardUtils';
@@ -7,150 +7,9 @@ import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 import { motion } from 'framer-motion';
 import { Rnd } from 'react-rnd';
-import { Trash2, Move } from 'lucide-react';
+import { Trash2, Move, Maximize2, Minimize2, StretchHorizontal, Crop, Square } from 'lucide-react';
 
-export const Preview = () => {
-  const { markdown, setIsScrolled, setActiveCardIndex, cardStyle, isEditorOpen, isSidebarOpen, previewZoom, setPreviewZoom } = useStore();
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
-  const { width, height } = getCardDimensions(cardStyle);
-  const [scale, setScale] = useState(1);
-  const [autoScale, setAutoScale] = useState(1);
-
-  useEffect(() => {
-    const calculateScale = () => {
-      const isDesktop = window.innerWidth >= 1024;
-      
-      // Calculate occupied space based on open panels
-      // Editor: 400px + 24px (left-6) + 24px (margin)
-      // Sidebar: 350px + 24px (right-6) + 24px (margin)
-      // We add extra margin for visual breathing room
-      const editorSpace = (isDesktop && isEditorOpen) ? 448 : 40;
-      const sidebarSpace = (isDesktop && isSidebarOpen) ? 398 : 40;
-      
-      const horizontalOccupied = editorSpace + sidebarSpace;
-      const verticalSpace = 180; // TopBar + Padding
-
-      const availableWidth = Math.max(300, window.innerWidth - horizontalOccupied);
-      const availableHeight = Math.max(300, window.innerHeight - verticalSpace);
-      
-      const wScale = availableWidth / width;
-      const hScale = availableHeight / height;
-      
-      // Fit completely within viewport, but never upscale (max 1)
-      let s = Math.min(wScale, hScale, 1);
-
-      // In auto-height mode, we only care about width fitting, allowing vertical scrolling
-      if (cardStyle.autoHeight) {
-        s = Math.min(wScale, 1);
-      }
-      
-      // Minimum scale to avoid invisibility
-      if (s < 0.2) s = 0.2;
-      
-      setAutoScale(s);
-    };
-    
-    calculateScale();
-    window.addEventListener('resize', calculateScale);
-    return () => window.removeEventListener('resize', calculateScale);
-  }, [width, height, isEditorOpen, isSidebarOpen, cardStyle.autoHeight]);
-
-  useEffect(() => {
-    if (previewZoom > 0) {
-      setScale(previewZoom);
-    } else {
-      setScale(autoScale);
-    }
-  }, [previewZoom, autoScale]);
-
-  // Handle Ctrl+Scroll for zoom
-  useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      if ((e.ctrlKey || e.metaKey) && scrollRef.current && scrollRef.current.contains(e.target as Node)) {
-        e.preventDefault();
-        const delta = e.deltaY > 0 ? -0.1 : 0.1;
-        const currentScale = previewZoom > 0 ? previewZoom : autoScale;
-        const newScale = Math.max(0.2, Math.min(4, currentScale + delta));
-        setPreviewZoom(newScale);
-      }
-    };
-
-    window.addEventListener('wheel', handleWheel, { passive: false });
-    return () => window.removeEventListener('wheel', handleWheel);
-  }, [previewZoom, autoScale, setPreviewZoom]);
-  
-  // Handle scroll for TopBar blur effect and active card detection
-  useEffect(() => {
-    let ticking = false;
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          if (scrollRef.current) {
-            setIsScrolled(scrollRef.current.scrollTop > 20);
-            
-            // Find center card
-            const cards = document.querySelectorAll('[id^="card-"]');
-            let closestCardIndex = 0;
-            let minDistance = Infinity;
-            const center = window.innerHeight / 2;
-    
-            cards.forEach((card, index) => {
-              const rect = card.getBoundingClientRect();
-              const distance = Math.abs(rect.top + rect.height / 2 - center);
-              if (distance < minDistance) {
-                minDistance = distance;
-                closestCardIndex = index;
-              }
-            });
-            setActiveCardIndex(closestCardIndex);
-          }
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    const el = scrollRef.current;
-    el?.addEventListener('scroll', handleScroll);
-    return () => el?.removeEventListener('scroll', handleScroll);
-  }, [setIsScrolled, setActiveCardIndex]);
-  
-  // Split markdown by "---" to create pages
-  const pages = cardStyle.autoHeight 
-    ? [markdown] 
-    : markdown.split(/\n\s*---\s*\n|^\s*---\s*$/m).filter(page => page.trim() !== '');
-
-  const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
-  const paddingLeft = (isDesktop && isEditorOpen) ? '448px' : '2rem';
-  const paddingRight = (isDesktop && isSidebarOpen) ? '398px' : '2rem';
-
-  return (
-    <div 
-      ref={scrollRef}
-      className="w-full h-full overflow-y-auto pt-24 flex flex-col items-center gap-12 custom-scrollbar pb-32 transition-all duration-300"
-      style={{
-        paddingLeft,
-        paddingRight
-      }}
-    >
-      {pages.map((pageContent, index) => (
-        <Card 
-          key={index} 
-          content={pageContent} 
-          index={index}
-          scale={scale}
-          width={width}
-          height={height}
-          selectedImageId={selectedImageId}
-          setSelectedImageId={setSelectedImageId}
-        />
-      ))}
-    </div>
-  );
-};
-
-const Card = ({ 
+const Card = memo(({ 
   content, 
   index, 
   scale, 
@@ -167,10 +26,33 @@ const Card = ({
   selectedImageId: string | null,
   setSelectedImageId: (id: string | null) => void
 }) => {
-  const { cardStyle, cardImages, updateCardImage, removeCardImage, isResetting } = useStore();
+  const cardStyle = useStore(state => state.cardStyle);
+  const cardImages = useStore(state => state.cardImages);
+  const updateCardImage = useStore(state => state.updateCardImage);
+  const removeCardImage = useStore(state => state.removeCardImage);
+  const isResetting = useStore(state => state.isResetting);
+  
+  const cardRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const [isSnapX, setIsSnapX] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [draggingId, setDraggingId] = useState<string | null>(null);
+
+  // Handle keyboard delete
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedImageId) {
+        // Don't delete if we are in an input or textarea
+        if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) return;
+        
+        removeCardImage(index, selectedImageId);
+        setSelectedImageId(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedImageId, index, removeCardImage, setSelectedImageId]);
   
   // Dynamic styles based on settings
   const outerStyle = {
@@ -199,6 +81,40 @@ const Card = ({
   };
 
   const images = cardImages[index] || [];
+
+  // Sync images with spacers
+  useEffect(() => {
+    if (!cardRef.current) return;
+    
+    // We use a small delay to ensure markdown has rendered and DOM is ready
+     const timer = setTimeout(() => {
+       images.forEach((image) => {
+         if (image.spacerId && image.isAttachedToSpacer) {
+           const spacer = cardRef.current?.querySelector(`[data-spacer-id="${image.spacerId}"]`);
+          if (spacer) {
+            const rect = spacer.getBoundingClientRect();
+            const cardRect = cardRef.current?.getBoundingClientRect();
+            
+            if (cardRect) {
+              // Calculate center position of spacer relative to card
+              const targetX = (rect.left - cardRect.left) + (rect.width / 2) - (image.width / 2);
+              const targetY = (rect.top - cardRect.top) + (rect.height / 2) - (image.height / 2);
+              
+              // Only update if position is significantly different to avoid loops or unnecessary state updates
+              if (Math.abs(image.x - targetX) > 0.5 || Math.abs(image.y - targetY) > 0.5) {
+                updateCardImage(index, image.id, { x: targetX, y: targetY });
+              }
+            }
+          }
+        }
+      });
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, [content, images, index, updateCardImage, width, height, cardStyle]);
+
+  // 修复 Markdown 空行渲染问题：使用更通用的方式处理空行，确保连续换行被保留
+  const processedContent = content.replace(/\n\s*\n/g, '\n\n&zwnj;\n\n');
 
   const renderOuterBackground = () => {
     if (!cardStyle.enableBackground) return null;
@@ -256,6 +172,158 @@ const Card = ({
      }
   };
 
+  const components = useMemo(() => ({
+    h1: ({node, ...props}: any) => (
+      <div className="flex flex-col items-center mb-2 mt-4 first:mt-0">
+        <h1 style={{color: cardStyle.h1Color || cardStyle.textColor, fontSize: `${cardStyle.h1FontSize}px`}} className="font-bold mb-1 text-center" {...props} />
+        <div className="h-1 w-24 rounded-full" style={{backgroundColor: cardStyle.h1LineColor || cardStyle.accentColor}} />
+      </div>
+    ),
+    h2: ({node, ...props}: any) => (
+      <div className="flex justify-center mb-2 mt-4 first:mt-0">
+        <h2 
+          style={{
+            backgroundColor: cardStyle.h2BackgroundColor || cardStyle.accentColor, 
+            color: cardStyle.h2Color || '#fff',
+            fontSize: `${cardStyle.h2FontSize}px`
+          }} 
+          className="font-bold px-4 py-1.5 shadow-md rounded-lg" 
+          {...props} 
+        />
+      </div>
+    ),
+    h3: ({node, ...props}: any) => (
+      <h3 
+        style={{
+          color: cardStyle.h3Color || cardStyle.textColor,
+          borderLeftColor: cardStyle.h3LineColor || cardStyle.accentColor,
+          fontSize: `${cardStyle.h3FontSize}px`
+        }} 
+        className="font-bold mb-4 mt-4 first:mt-0 pl-3 border-l-4" 
+        {...props} 
+      />
+    ),
+    h4: ({node, ...props}: any) => (
+       <h4
+        style={{
+          color: cardStyle.textColor,
+          fontSize: `${cardStyle.headingScale * 1.125}rem`
+        }}
+        className="font-bold mb-2 mt-4 first:mt-0"
+        {...props}
+       />
+    ),
+    h5: ({node, ...props}: any) => (
+       <h5
+        style={{
+          color: cardStyle.textColor,
+          fontSize: `${cardStyle.headingScale * 1}rem`
+        }}
+        className="font-bold mb-2 mt-4 first:mt-0"
+        {...props}
+       />
+    ),
+    h6: ({node, ...props}: any) => (
+       <h6
+        style={{
+          color: cardStyle.textColor,
+          fontSize: `${cardStyle.headingScale * 0.875}rem`
+        }}
+        className="font-bold mb-2 mt-4 first:mt-0 opacity-80"
+        {...props}
+       />
+    ),
+    del: ({node, ...props}: any) => <del style={{color: cardStyle.textColor, opacity: 0.7}} {...props} />,
+    p: ({ node, children, ...props }: any) => {
+      // Check if children is just the &zwnj; character
+      const isZwnj = Array.isArray(children) 
+        ? children.length === 1 && children[0] === '\u200C'
+        : children === '\u200C';
+      
+      if (isZwnj) return null;
+
+      const isEmpty = !children || (Array.isArray(children) && children.length === 0);
+      return (
+        <p 
+          style={{ color: cardStyle.textColor }} 
+          className="mb-4 leading-relaxed opacity-90 first:mt-0 min-h-[1.5em]" 
+          {...props}
+        >
+          {isEmpty ? '\u00A0' : children}
+        </p>
+      );
+    },
+    ul: ({node, ...props}: any) => <ul style={{color: cardStyle.textColor}} className="mb-4 list-disc list-outside !pl-5 m-0 space-y-1" {...props} />,
+    ol: ({node, ...props}: any) => <ol style={{color: cardStyle.textColor}} className="mb-4 list-decimal list-outside !pl-6 m-0 space-y-1" {...props} />,
+    li: ({node, ...props}: any) => <li className="marker:opacity-70 [&>p]:inline" {...props} />,
+    table: ({node, ...props}: any) => <div className="overflow-x-auto mb-6 rounded-lg opacity-90"><table className="w-full text-left text-sm border-collapse border-none" {...props} /></div>,
+    thead: ({node, ...props}: any) => <thead className="bg-black/5 dark:bg-white/10 font-semibold border-none" {...props} />,
+    tbody: ({node, ...props}: any) => <tbody className="border-none" {...props} />,
+    tr: ({node, ...props}: any) => <tr className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors border-none" {...props} />,
+    th: ({node, ...props}: any) => <th className="p-3 whitespace-nowrap border-none" {...props} />,
+    td: ({node, ...props}: any) => <td className="p-3 border-none" {...props} />,
+    hr: () => null,
+    pre: ({node, children}: any) => <>{children}</>,
+    blockquote: ({node, ...props}: any) => (
+      <blockquote 
+        style={{ 
+          borderLeft: `4px solid ${cardStyle.blockquoteBorderColor || cardStyle.accentColor}`, 
+          backgroundColor: cardStyle.blockquoteBackgroundColor 
+        }} 
+        className="pl-4 py-2 my-4 italic opacity-90 rounded-r-lg rounded-bl-sm [&>p:last-child]:mb-0 [&>p:first-child]:mt-0 break-words before:content-none after:content-none [&_p]:before:content-none [&_p]:after:content-none" 
+        {...props} 
+      />
+    ),
+    a: ({node, ...props}: any) => <a style={{color: cardStyle.accentColor}} className="underline decoration-auto underline-offset-2 break-all" {...props} />,
+    img: ({ node, src, alt, ...props }: any) => {
+      if (src === 'spacer' || src?.startsWith('spacer?')) {
+        const spacerId = src.includes('id=') ? src.split('id=')[1] : null;
+        return (
+          <div 
+            data-spacer-id={spacerId}
+            className="w-full h-48 bg-transparent my-4 pointer-events-none" 
+          />
+        );
+      }
+      let imgWidth: string | undefined;
+      let cleanSrc = src;
+      if (src && src.includes('#width=')) {
+        const parts = src.split('#width=');
+        cleanSrc = parts[0];
+        imgWidth = parts[1];
+      }
+      return (
+        <img 
+          src={cleanSrc} 
+          alt={alt} 
+          crossOrigin="anonymous"
+          className="markdown-image"
+          style={{ 
+            display: 'block',
+            maxWidth: '100%', 
+            width: imgWidth || 'auto',
+            borderRadius: '8px',
+            marginTop: '1rem',
+            marginBottom: '1rem'
+          }} 
+          {...props} 
+        />
+      );
+    },
+    code: ({ node, children, ...props }: any) => {
+      const text = String(children ?? '');
+      return !text.includes('\n') ? (
+        <code style={{ backgroundColor: cardStyle.codeBackgroundColor }} className="rounded px-1.5 py-0.5 text-[0.9em] font-mono border-none" {...props}>
+          {children}
+        </code>
+      ) : (
+        <code style={{ backgroundColor: cardStyle.codeBackgroundColor, fontSize: '0.8em' }} className="block rounded-lg p-4 font-mono my-4 overflow-x-auto whitespace-pre-wrap break-words border-none" {...props}>
+          {children}
+        </code>
+      );
+    }
+  }), [cardStyle]);
+
   return (
     <div 
       style={{ 
@@ -275,325 +343,347 @@ const Card = ({
         }}
       >
         <motion.div
+          ref={cardRef}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.1 }}
-          className={`relative shadow-2xl overflow-hidden flex flex-col flex-shrink-0 group ${isResetting && !draggingId ? 'transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)]' : ''}`}
+          className={`relative shadow-2xl flex flex-col flex-shrink-0 group select-none ${isResetting && !draggingId ? 'transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)]' : ''}`}
           style={outerStyle}
           id={`card-${index}`}
-          onClick={() => setSelectedImageId(null)} // Deselect image when clicking card background
+          onMouseDown={(e) => {
+            // Only deselect if we click exactly on the card background, not on images or toolbars
+            if (e.target === e.currentTarget) {
+              setSelectedImageId(null);
+            }
+          }}
         >
           {renderOuterBackground()}
 
           <div 
-            className={`relative w-full h-full flex flex-col overflow-hidden ${isResetting && !draggingId ? 'transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)]' : ''}`}
+            ref={contentRef}
+            className={`relative w-full h-full flex flex-col ${isResetting && !draggingId ? 'transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)]' : ''}`}
             style={innerStyle}
+            onMouseDown={(e) => {
+              // Also allow deselection when clicking the inner container background
+              if (e.target === e.currentTarget) {
+                setSelectedImageId(null);
+              }
+            }}
           >
             {renderInnerBackground()}
 
-            {/* Background gradients or patterns based on template (only if no custom image/gradient is set, or as overlay?) 
-                Actually, let's keep it but make it subtle or remove if custom bg is set?
-                Default template effect:
-            */}
             {cardStyle.template === 'default' && (
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-pink-400 to-orange-300 blur-3xl opacity-20 -z-0 pointer-events-none" />
             )}
             
-            {/* Images Layer */}
-            {images.map((img) => {
-              const isDragging = draggingId === img.id;
-              const displayX = isDragging ? dragOffset.x : img.x;
-              const displayY = isDragging ? dragOffset.y : img.y;
-
-              return (
-                <Rnd
-                  key={img.id}
-                  size={{ width: img.width, height: img.height }}
-                  position={{ x: displayX, y: displayY }}
-                  onDragStart={() => {
-                    setDraggingId(img.id);
-                    setDragOffset({ x: img.x, y: img.y });
-                  }}
-                  onDrag={(_, d) => {
-                     const centerX = (width - img.width) / 2;
-                     const threshold = 12; // 缩小阈值，更加精准
-                     
-                     let targetX = d.x;
-                     const isNearCenter = Math.abs(d.x - centerX) < threshold;
-                     
-                     if (isNearCenter) {
-                       targetX = centerX; // 强制锁定在中心
-                       if (!isSnapX) setIsSnapX(true);
-                     } else {
-                       if (isSnapX) setIsSnapX(false);
-                     }
-                     
-                     setDragOffset({ x: targetX, y: d.y });
-                   }}
-                   onDragStop={(_, d) => {
-                     const centerX = (width - img.width) / 2;
-                     const threshold = 12;
-                     let finalX = d.x;
-                     if (Math.abs(d.x - centerX) < threshold) {
-                       finalX = centerX;
-                     }
-                     updateCardImage(index, img.id, { x: finalX, y: d.y });
-                     setIsSnapX(false);
-                     setDraggingId(null);
-                   }}
-                   onResizeStop={(_, __, ref, ___, position) => {
-                     updateCardImage(index, img.id, {
-                       width: parseInt(ref.style.width),
-                       height: parseInt(ref.style.height),
-                       ...position,
-                     });
-                   }}
-                   bounds="parent"
-                   dragHandleClassName="drag-handle"
-                   style={{ 
-                     transition: isDragging ? 'none' : 'all 0.2s ease',
-                     zIndex: isDragging ? 50 : 20 
-                   }}
-                   className={`${selectedImageId === img.id ? 'ring-2 ring-blue-500' : 'hover:ring-1 hover:ring-blue-300/50'}`}
-                  onClick={(e: ReactMouseEvent) => {
-                    e.stopPropagation();
-                    setSelectedImageId(img.id);
-                  }}
-                >
-                  <div className="relative w-full h-full group/img drag-handle cursor-move">
-                    <img 
-                      src={img.src} 
-                      className="w-full h-full object-cover pointer-events-none" 
-                      alt="added"
-                      style={{ 
-                          objectPosition: `${-img.crop.x}px ${-img.crop.y}px`,
-                          transform: `scale(${img.crop.scale})` 
-                      }}
-                    />
-                    
-                    {selectedImageId === img.id && (
-                      <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/80 text-white rounded-lg p-1 shadow-xl z-50 export-ignore">
-                          <button 
-                            className="p-1 hover:bg-white/20 rounded"
-                            title="Move Mode (Default)"
-                          >
-                            <Move size={14} />
-                          </button>
-                          <button 
-                            className="p-1 hover:bg-red-500/80 rounded text-red-300"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeCardImage(index, img.id);
-                            }}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                      </div>
-                    )}
-                  </div>
-                </Rnd>
-              );
-            })}
-
-            {/* Snap Guides */}
-            {isSnapX && (
-              <div 
-                className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-blue-500/50 z-30 pointer-events-none"
-                style={{ height: '100%' }}
-              />
-            )}
-
             <div className="relative z-10 h-full flex flex-col pointer-events-none">
               <div 
-                className="prose prose-sm max-w-none flex-1 pointer-events-auto overflow-hidden break-words [&>*:first-child]:mt-0"
+                className="prose prose-sm max-w-none flex-1 pointer-events-auto overflow-hidden break-words [&>*:first-child]:mt-0 prose-hr:hidden prose-blockquote:before:content-none prose-blockquote:after:content-none prose-blockquote:border-none [&_*]:border-none !prose-quotes-none"
                 style={{ 
                   padding: 0,
-                  maxHeight: cardStyle.autoHeight ? 'none' : '100%', // Ensure strict clipping to prevent overlap
+                  maxHeight: cardStyle.autoHeight ? 'none' : '100%',
                   fontFamily: 'inherit'
                 }}
               >
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm, remarkBreaks]}
-                  components={{
-                      h1: ({...props}) => (
-                  <div className="flex flex-col items-center mb-8 mt-4 first:mt-0">
-                    <h1 style={{color: cardStyle.h1Color || cardStyle.textColor, fontSize: `${cardStyle.h1FontSize}px`}} className="font-bold mb-2 text-center" {...props} />
-                    <div className="h-1 w-24 rounded-full" style={{backgroundColor: cardStyle.h1LineColor || cardStyle.accentColor}} />
-                  </div>
-                ),
-                h2: ({...props}) => (
-                  <div className="flex justify-center mb-6 mt-6 first:mt-0">
-                    <h2 
-                      style={{
-                        backgroundColor: cardStyle.h2BackgroundColor || cardStyle.accentColor, 
-                        color: cardStyle.h2Color || '#fff',
-                        fontSize: `${cardStyle.h2FontSize}px`
-                      }} 
-                      className="font-bold px-4 py-1.5 shadow-md rounded-lg" 
-                      {...props} 
-                    />
-                  </div>
-                ),
-                h3: ({...props}) => (
-                  <h3 
-                    style={{
-                      color: cardStyle.h3Color || cardStyle.textColor,
-                      borderLeftColor: cardStyle.h3LineColor || cardStyle.accentColor,
-                      fontSize: `${cardStyle.h3FontSize}px`
-                    }} 
-                    className="font-bold mb-4 mt-4 first:mt-0 pl-3 border-l-4" 
-                    {...props} 
-                  />
-                ),
-                h4: ({...props}) => (
-                   <h4
-                    style={{
-                      color: cardStyle.textColor,
-                      fontSize: `${cardStyle.headingScale * 1.125}rem`
-                    }}
-                    className="font-bold mb-2 mt-4 first:mt-0"
-                    {...props}
-                   />
-                ),
-                h5: ({...props}) => (
-                   <h5
-                    style={{
-                      color: cardStyle.textColor,
-                      fontSize: `${cardStyle.headingScale * 1}rem`
-                    }}
-                    className="font-bold mb-2 mt-4 first:mt-0"
-                    {...props}
-                   />
-                ),
-                h6: ({...props}) => (
-                   <h6
-                    style={{
-                      color: cardStyle.textColor,
-                      fontSize: `${cardStyle.headingScale * 0.875}rem`
-                    }}
-                    className="font-bold mb-2 mt-4 first:mt-0 opacity-80"
-                    {...props}
-                   />
-                ),
-                del: ({...props}) => <del style={{color: cardStyle.textColor, opacity: 0.7}} {...props} />,
-                      p: ({...props}) => (
-                        <p style={{color: cardStyle.textColor}} className="mb-4 leading-relaxed opacity-90 first:mt-0" {...props} />
-                      ),
-                      ul: ({...props}) => <ul style={{color: cardStyle.textColor}} className="mb-4 list-disc list-inside space-y-1" {...props} />,
-                      ol: ({...props}) => <ol style={{color: cardStyle.textColor}} className="mb-4 list-decimal list-inside space-y-1" {...props} />,
-                      li: ({...props}) => <li className="marker:opacity-70 [&>p]:inline" {...props} />,
-                      table: ({...props}) => <div className="overflow-x-auto mb-6 rounded-lg border border-current opacity-90"><table className="w-full text-left text-sm border-collapse" {...props} /></div>,
-                      thead: ({...props}) => <thead className="bg-black/5 dark:bg-white/10 font-semibold" {...props} />,
-                      tbody: ({...props}) => <tbody className="divide-y divide-current/10" {...props} />,
-                      tr: ({...props}) => <tr className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors" {...props} />,
-                      th: ({...props}) => <th className="p-3 border-b border-current/20 whitespace-nowrap" {...props} />,
-                      td: ({...props}) => <td className="p-3 border-b border-current/10" {...props} />,
-                      pre: ({children}) => <>{children}</>,
-                      blockquote: ({...props}) => (
-                        <blockquote 
-                          style={{ 
-                            borderLeftColor: cardStyle.blockquoteBorderColor, 
-                            backgroundColor: cardStyle.blockquoteBackgroundColor 
-                          }} 
-                          className="border-l-4 pl-4 py-2 my-4 italic opacity-90 rounded-r-lg rounded-bl-sm [&>p:last-child]:mb-0 [&>p:first-child]:mt-0 break-words" 
-                          {...props} 
-                        />
-                      ),
-                      a: ({...props}) => <a style={{color: cardStyle.accentColor}} className="underline decoration-auto underline-offset-2 break-all" {...props} />,
-                      img: ({ src, alt, ...props }: { src?: string; alt?: string }) => {
-                        if (src === 'spacer') {
-                          return <div className="w-full" style={{ height: '200px' }} />;
-                        }
-                        let width: string | undefined;
-                        let cleanSrc = src;
-                        if (src && src.includes('#width=')) {
-                          const parts = src.split('#width=');
-                          cleanSrc = parts[0];
-                          width = parts[1];
-                        }
-                        return (
-                          <img 
-                            src={cleanSrc} 
-                            alt={alt} 
-                            crossOrigin="anonymous"
-                            className="markdown-image"
-                            style={{ 
-                              display: 'block',
-                              maxWidth: '100%', 
-                              width: width || 'auto',
-                              borderRadius: '8px',
-                              marginTop: '1rem',
-                              marginBottom: '1rem'
-                            }} 
-                            {...props} 
-                          />
-                        );
-                      },
-                      code: ({ children, ...props }: { children?: React.ReactNode }) => {
-                        const text = String(children ?? '');
-                        return !text.includes('\n') ? (
-                          <code style={{ backgroundColor: cardStyle.codeBackgroundColor }} className="rounded px-1.5 py-0.5 text-[0.9em] font-mono" {...props}>
-                            {children}
-                          </code>
-                        ) : (
-                          <code style={{ backgroundColor: cardStyle.codeBackgroundColor, fontSize: '0.8em' }} className="block rounded-lg p-4 font-mono my-4 overflow-x-auto whitespace-pre-wrap break-words" {...props}>
-                            {children}
-                          </code>
-                        );
-                      }
-                  }}
+                  components={components}
                 >
-                  {content}
+                  {processedContent}
                 </ReactMarkdown>
               </div>
             </div>
 
-            {/* Footer (Watermark & Page Number) - Positioned in bottom padding */}
-            {(cardStyle.pageNumber?.enabled || cardStyle.watermark?.enabled) && (
+            {isSnapX && (
               <div 
-                className="absolute bottom-0 left-0 right-0 flex items-center font-mono uppercase tracking-widest pointer-events-auto"
+                className="absolute top-0 bottom-0 w-px bg-blue-500/50 z-[100] pointer-events-none"
                 style={{ 
-                  color: cardStyle.textColor,
-                  height: `${cardStyle.cardPadding?.bottom ?? cardStyle.contentPadding}px`,
-                  paddingLeft: `${cardStyle.cardPadding?.left ?? cardStyle.contentPadding}px`,
-                  paddingRight: `${cardStyle.cardPadding?.right ?? cardStyle.contentPadding}px`
+                  height: '100%', 
+                  left: '50%', 
+                  transform: 'translateX(-0.5px)' 
                 }}
-              >
-                {/* Left */}
-                <div className="absolute left-0 pl-[inherit] flex items-center gap-4 h-full">
-                  {cardStyle.pageNumber?.enabled && cardStyle.pageNumber?.position === 'left' && (
-                      <span style={{ color: cardStyle.pageNumber?.color || cardStyle.textColor, opacity: cardStyle.pageNumber?.opacity, fontSize: `${cardStyle.pageNumber?.fontSize}px` }} className="font-bold">{index + 1}</span>
-                  )}
-                  {cardStyle.watermark?.enabled && cardStyle.watermark?.position === 'left' && (
-                      <span style={{ color: cardStyle.watermark?.color || cardStyle.textColor, opacity: cardStyle.watermark?.opacity, fontSize: `${cardStyle.watermark?.fontSize}px` }}>{cardStyle.watermark?.content}</span>
-                  )}
-                </div>
-
-                {/* Center */}
-                <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-4 h-full">
-                  {cardStyle.pageNumber?.enabled && cardStyle.pageNumber?.position === 'center' && (
-                      <span style={{ color: cardStyle.pageNumber?.color || cardStyle.textColor, opacity: cardStyle.pageNumber?.opacity, fontSize: `${cardStyle.pageNumber?.fontSize}px` }} className="font-bold">{index + 1}</span>
-                  )}
-                  {cardStyle.watermark?.enabled && cardStyle.watermark?.position === 'center' && (
-                      <span style={{ color: cardStyle.watermark?.color || cardStyle.textColor, opacity: cardStyle.watermark?.opacity, fontSize: `${cardStyle.watermark?.fontSize}px` }}>{cardStyle.watermark?.content}</span>
-                  )}
-                </div>
-
-                {/* Right */}
-                <div className="absolute right-0 pr-[inherit] flex items-center gap-4 h-full">
-                  {cardStyle.watermark?.enabled && cardStyle.watermark?.position === 'right' && (
-                      <span style={{ color: cardStyle.watermark?.color || cardStyle.textColor, opacity: cardStyle.watermark?.opacity, fontSize: `${cardStyle.watermark?.fontSize}px` }}>{cardStyle.watermark?.content}</span>
-                  )}
-                  {cardStyle.pageNumber?.enabled && cardStyle.pageNumber?.position === 'right' && (
-                      <span style={{ color: cardStyle.pageNumber?.color || cardStyle.textColor, opacity: cardStyle.pageNumber?.opacity, fontSize: `${cardStyle.pageNumber?.fontSize}px` }} className="font-bold">{index + 1}</span>
-                  )}
-                </div>
-              </div>
+              />
             )}
 
+            {/* Images Layer */}
+            <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
+              {images.filter(img => img.src && img.src.length > 0).map((image) => (
+                <Rnd
+                  key={image.id}
+                  size={{ width: image.width, height: image.height }}
+                  position={{ x: image.x, y: image.y }}
+                  onDragStart={() => {
+                    setDraggingId(image.id);
+                    // Detach from spacer when user starts dragging manually
+                    if (image.isAttachedToSpacer) {
+                      updateCardImage(index, image.id, { isAttachedToSpacer: false });
+                    }
+                  }}
+                  onDrag={(e, d) => {
+                    const centerX = width / 2;
+                    const imageCenterX = d.x + image.width / 2;
+                    const snapThreshold = 10;
+                    const isSnapped = Math.abs(imageCenterX - centerX) < snapThreshold;
+                    setIsSnapX(isSnapped);
+                  }}
+                  onDragStop={(e, d) => {
+                    setDraggingId(null);
+                    setIsSnapX(false);
+                    const centerX = width / 2;
+                    const imageCenterX = d.x + image.width / 2;
+                    const snapThreshold = 10;
+                    const finalX = Math.abs(imageCenterX - centerX) < snapThreshold 
+                      ? centerX - image.width / 2 
+                      : d.x;
+                    updateCardImage(index, image.id, { x: finalX, y: d.y });
+                  }}
+                  onResizeStart={() => setDraggingId(image.id)}
+                  onResize={(e, direction, ref, delta, position) => {
+                    const newWidth = parseInt(ref.style.width);
+                    const newHeight = parseInt(ref.style.height);
+                    
+                    if (image.resizeMode === 'none') {
+                      // Real-time crop compensation
+                      const dx = position.x - image.x;
+                      const dy = position.y - image.y;
+                      
+                      updateCardImage(index, image.id, {
+                        width: newWidth,
+                        height: newHeight,
+                        x: position.x,
+                        y: position.y,
+                        crop: {
+                          ...image.crop,
+                          x: (image.crop.x || 0) - dx,
+                          y: (image.crop.y || 0) - dy
+                        }
+                      });
+                    } else {
+                      updateCardImage(index, image.id, {
+                        width: newWidth,
+                        height: newHeight,
+                        ...position,
+                      });
+                    }
+                  }}
+                  onResizeStop={() => {
+                    setDraggingId(null);
+                  }}
+                  bounds="parent"
+                  className={`pointer-events-auto ${selectedImageId === image.id ? 'z-30' : 'z-20'}`}
+                  enableResizing={selectedImageId === image.id}
+                  lockAspectRatio={image.resizeMode === 'contain'}
+                >
+                  <div 
+                    className={`relative w-full h-full group cursor-move ${selectedImageId === image.id ? 'ring-2 ring-blue-500 bg-blue-500/5' : ''}`}
+                    onMouseDown={() => {
+                      setSelectedImageId(image.id);
+                    }}
+                  >
+                    <div className="w-full h-full overflow-hidden rounded-sm pointer-events-none">
+                      <img
+                          src={image.src}
+                          alt=""
+                          className="max-w-none"
+                          style={{
+                            width: image.resizeMode === 'none' ? 'auto' : '100%',
+                            height: image.resizeMode === 'none' ? 'auto' : '100%',
+                            objectFit: image.resizeMode === 'none' ? undefined : image.resizeMode,
+                            transform: image.resizeMode === 'none' 
+                              ? `translate(${image.crop.x}px, ${image.crop.y}px) scale(${image.crop.scale})`
+                              : `scale(${image.crop.scale})`,
+                            transformOrigin: '0 0',
+                          }}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.opacity = '0';
+                          }}
+                        />
+                      </div>
+                      
+                      {selectedImageId === image.id && (
+                        <>
+                          {/* Image Toolbar */}
+                          <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-xl shadow-xl border border-black/5 dark:border-white/10 z-[60] pointer-events-auto">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateCardImage(index, image.id, { resizeMode: 'cover', crop: { x: 0, y: 0, scale: 1 } });
+                              }}
+                              className={`p-1.5 rounded-lg transition-colors ${image.resizeMode === 'cover' ? 'bg-blue-500 text-white' : 'hover:bg-black/5 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400'}`}
+                              title="Cover"
+                            >
+                              <Square size={16} />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const ratio = (image.naturalHeight || 1) / (image.naturalWidth || 1);
+                                updateCardImage(index, image.id, { 
+                                  resizeMode: 'contain', 
+                                  height: image.width * ratio,
+                                  crop: { x: 0, y: 0, scale: 1 } 
+                                });
+                              }}
+                              className={`p-1.5 rounded-lg transition-colors ${image.resizeMode === 'contain' ? 'bg-blue-500 text-white' : 'hover:bg-black/5 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400'}`}
+                              title="Contain (Keep Ratio)"
+                            >
+                              <Maximize2 size={16} />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateCardImage(index, image.id, { resizeMode: 'fill', crop: { x: 0, y: 0, scale: 1 } });
+                              }}
+                              className={`p-1.5 rounded-lg transition-colors ${image.resizeMode === 'fill' ? 'bg-blue-500 text-white' : 'hover:bg-black/5 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400'}`}
+                              title="Fill"
+                            >
+                              <StretchHorizontal size={16} />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Calculate initial scale to match current visual size
+                                const naturalWidth = image.naturalWidth || image.width;
+                                const initialScale = image.width / naturalWidth;
+                                
+                                updateCardImage(index, image.id, { 
+                                  resizeMode: 'none',
+                                  crop: { 
+                                    ...image.crop, 
+                                    scale: initialScale,
+                                    x: 0, 
+                                    y: 0 
+                                  } 
+                                });
+                              }}
+                              className={`p-1.5 rounded-lg transition-colors ${image.resizeMode === 'none' ? 'bg-blue-500 text-white' : 'hover:bg-black/5 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400'}`}
+                              title="Crop Mode (Figma Style)"
+                            >
+                              <Crop size={16} />
+                            </button>
+                            <div className="w-px h-4 bg-black/10 dark:bg-white/10 mx-1" />
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeCardImage(index, image.id);
+                                setSelectedImageId(null);
+                              }}
+                              className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                      </>
+                    )}
+                  </div>
+                </Rnd>
+              ))}
+            </div>
           </div>
         </motion.div>
       </div>
+    </div>
+  );
+});
+
+Card.displayName = 'Card';
+
+export const Preview = () => {
+  const { markdown, setIsScrolled, setActiveCardIndex, cardStyle, isEditorOpen, isSidebarOpen, previewZoom, setPreviewZoom, setSelectedImageId: storeSetSelectedImageId } = useStore();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
+  const { width, height } = getCardDimensions(cardStyle);
+  const [scale, setScale] = useState(1);
+  const [autoScale, setAutoScale] = useState(1);
+
+  useEffect(() => {
+    const calculateScale = () => {
+      const isDesktop = window.innerWidth >= 1024;
+      const editorSpace = (isDesktop && isEditorOpen) ? 448 : 40;
+      const sidebarSpace = (isDesktop && isSidebarOpen) ? 398 : 40;
+      const horizontalOccupied = editorSpace + sidebarSpace;
+      const verticalSpace = 180;
+      const availableWidth = Math.max(300, window.innerWidth - horizontalOccupied);
+      const availableHeight = Math.max(300, window.innerHeight - verticalSpace);
+      const wScale = availableWidth / width;
+      const hScale = availableHeight / height;
+      let s = cardStyle.autoHeight ? Math.min(wScale, 1) : Math.min(wScale, hScale, 1);
+      if (s < 0.2) s = 0.2;
+      setAutoScale(s);
+    };
+    calculateScale();
+    window.addEventListener('resize', calculateScale);
+    return () => window.removeEventListener('resize', calculateScale);
+  }, [width, height, isEditorOpen, isSidebarOpen, cardStyle.autoHeight]);
+
+  useEffect(() => {
+    setScale(previewZoom > 0 ? previewZoom : autoScale);
+  }, [previewZoom, autoScale]);
+
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if ((e.ctrlKey || e.metaKey) && scrollRef.current?.contains(e.target as Node)) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        const currentScale = previewZoom > 0 ? previewZoom : autoScale;
+        setPreviewZoom(Math.max(0.2, Math.min(4, currentScale + delta)));
+      }
+    };
+    window.addEventListener('wheel', handleWheel, { passive: false });
+    return () => window.removeEventListener('wheel', handleWheel);
+  }, [previewZoom, autoScale, setPreviewZoom]);
+  
+  useEffect(() => {
+    const handleScroll = () => {
+      if (scrollRef.current) {
+        setIsScrolled(scrollRef.current.scrollTop > 20);
+        const cards = document.querySelectorAll('[id^="card-"]');
+        let closestCardIndex = 0;
+        let minDistance = Infinity;
+        const center = window.innerHeight / 2;
+        cards.forEach((card, index) => {
+          const rect = card.getBoundingClientRect();
+          const distance = Math.abs(rect.top + rect.height / 2 - center);
+          if (distance < minDistance) {
+            minDistance = distance;
+            closestCardIndex = index;
+          }
+        });
+        setActiveCardIndex(closestCardIndex);
+      }
+    };
+    const el = scrollRef.current;
+    el?.addEventListener('scroll', handleScroll);
+    return () => el?.removeEventListener('scroll', handleScroll);
+  }, [setIsScrolled, setActiveCardIndex]);
+  
+  const pages = cardStyle.autoHeight 
+    ? [markdown] 
+    : markdown.split(/\n\s*---\s*\n|^\s*---\s*$/m).filter(page => page.trim() !== '');
+
+  const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
+  const paddingLeft = (isDesktop && isEditorOpen) ? '448px' : '2rem';
+  const paddingRight = (isDesktop && isSidebarOpen) ? '398px' : '2rem';
+
+  return (
+    <div 
+      ref={scrollRef}
+      className="w-full h-full overflow-y-auto pt-24 flex flex-col items-center gap-12 custom-scrollbar pb-32 transition-all duration-300"
+      style={{ paddingLeft, paddingRight }}
+    >
+      {pages.map((pageContent, index) => (
+        <Card 
+          key={index} 
+          content={pageContent} 
+          index={index}
+          scale={scale}
+          width={width}
+          height={height}
+          selectedImageId={selectedImageId}
+          setSelectedImageId={setSelectedImageId}
+        />
+      ))}
     </div>
   );
 };

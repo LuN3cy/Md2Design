@@ -2,9 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import { useStore } from '../store';
 import { useTranslation } from '../i18n';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Edit3, Bold, Italic, List, Quote, Heading1, Heading2, Link, Image as ImageIcon, Check, Strikethrough } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit3, Bold, Italic, List, Quote, Heading1, Heading2, Link, Image as ImageIcon, Check, Strikethrough, Type } from 'lucide-react';
 import { htmlToMarkdown } from '../utils/turndown';
 import { paginateMarkdown } from '../utils/pagination';
+import { marked } from 'marked';
 
 export const Editor = () => {
   const { markdown, setMarkdown, addCardImage, cardStyle, isEditorOpen, setIsEditorOpen } = useStore();
@@ -51,9 +52,18 @@ export const Editor = () => {
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selected = markdown.substring(start, end);
-    const escaped = marker.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-    const regex = new RegExp(`^${escaped}(.*)${escaped}$`);
     
+    const escapedMarker = marker.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    let regex;
+    if (marker === '**') {
+      regex = new RegExp(`^\\*\\*(.*)\\*\\*$`, 's');
+    } else if (marker === '*') {
+      regex = new RegExp(`^\\*(?!\\*)(.*)(?<!\\*)\\*$`, 's');
+    } else {
+      regex = new RegExp(`^${escapedMarker}(.*)${escapedMarker}$`, 's');
+    }
+    
+    // 1. Check if selection itself is wrapped
     if (regex.test(selected)) {
         const clean = selected.replace(regex, '$1');
         const newText = markdown.substring(0, start) + clean + markdown.substring(end);
@@ -61,6 +71,31 @@ export const Editor = () => {
         setTimeout(() => {
             textarea.focus();
             textarea.setSelectionRange(start, start + clean.length);
+        }, 0);
+        return;
+    }
+
+    // 2. Check if text around selection is wrapped
+    const before = markdown.substring(start - marker.length, start);
+    const after = markdown.substring(end, end + marker.length);
+    
+    // Special handling for * vs **
+    let isWrapped = before === marker && after === marker;
+    if (isWrapped && marker === '*') {
+      // If marker is *, ensure it's not actually part of **
+      const beforeBefore = markdown.substring(start - marker.length - 1, start - marker.length);
+      const afterAfter = markdown.substring(end + marker.length, end + marker.length + 1);
+      if (beforeBefore === '*' || afterAfter === '*') {
+        isWrapped = false;
+      }
+    }
+
+    if (isWrapped) {
+        const newText = markdown.substring(0, start - marker.length) + selected + markdown.substring(end + marker.length);
+        setMarkdown(newText);
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(start - marker.length, end - marker.length);
         }, 0);
     } else {
         const newText = markdown.substring(0, start) + marker + selected + marker + markdown.substring(end);
@@ -151,35 +186,27 @@ export const Editor = () => {
   };
 
   const handleImageUpload = (file: File) => {
-    const textarea = textareaRef.current;
-    // Capture insertion point - default to end if no selection
-    const startPos = textarea ? textarea.selectionStart : markdown.length;
-    const endPos = textarea ? textarea.selectionEnd : markdown.length;
-
-    // Calculate which card this insertion point belongs to
-    // Split text by separator up to the cursor position
-    const textBefore = markdown.substring(0, startPos);
-    // The separator is "\n---\n". We can match it.
-    // The logic in store/preview is `split(/\n\s*---\s*\n|^\s*---\s*$/m)`.
-    const separators = textBefore.match(/\n\s*---\s*\n|^\s*---\s*$/gm);
-    const targetCardIndex = separators ? separators.length : 0;
-
     const reader = new FileReader();
     reader.onload = (e) => {
       if (e.target?.result) {
         const imageUrl = e.target.result as string;
         
+        const textarea = textareaRef.current;
+        // Capture insertion point - default to end if no selection
+        const startPos = textarea ? textarea.selectionStart : markdown.length;
+        const textBefore = markdown.substring(0, startPos);
+        const separators = textBefore.match(/\n\s*---\s*\n|^\s*---\s*$/gm);
+        const targetCardIndex = separators ? separators.length : 0;
+        const spacerId = Math.random().toString(36).substring(2, 9);
+
         // Add to store (this will create the floating image)
-        addCardImage(targetCardIndex, imageUrl);
+        addCardImage(targetCardIndex, imageUrl, undefined, spacerId);
         
-        // Insert spacer syntax to create layout space
-        // Using a special image syntax that we'll intercept in Preview
-        const spacerMarkdown = `\n![spacer](spacer)\n`;
-        
+        const endPos = textarea ? textarea.selectionEnd : markdown.length;
+        const spacerMarkdown = `\n![spacer](spacer?id=${spacerId})\n`;
         const newText = markdown.substring(0, startPos) + spacerMarkdown + markdown.substring(endPos);
         setMarkdown(newText);
         
-        // Restore focus and move cursor after the inserted spacer
         setTimeout(() => {
           if (textarea) {
             textarea.focus();
@@ -288,7 +315,7 @@ export const Editor = () => {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -400, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="absolute left-6 top-20 bottom-6 w-[400px] glass-panel rounded-2xl flex flex-col z-40 overflow-hidden"
+            className="absolute left-6 top-20 bottom-6 w-[400px] glass-panel rounded-2xl flex flex-col z-40 overflow-hidden select-text"
           >
             <div className="flex items-center justify-between p-4 border-b border-black/10 dark:border-white/10">
               <div className="flex items-center gap-2 text-sm font-semibold opacity-80">
@@ -304,100 +331,102 @@ export const Editor = () => {
             </div>
 
             {/* Toolbar */}
-            <div className="flex items-center gap-0.5 p-2 border-b border-black/10 dark:border-white/10 overflow-x-auto custom-scrollbar no-scrollbar">
-              <button onClick={() => toggleInlineStyle('**')} title="Bold" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0">
-                <Bold size={16} />
-              </button>
-              <button onClick={() => toggleInlineStyle('*')} title="Italic" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0">
-                <Italic size={16} />
-              </button>
-              <button onClick={() => toggleInlineStyle('~~')} title="Strikethrough" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0">
-                <Strikethrough size={16} />
-              </button>
-              <button onClick={() => toggleBlockStyle('#')} title="H1" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0">
-                <Heading1 size={16} />
-              </button>
-              <button onClick={() => toggleBlockStyle('##')} title="H2" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0">
-                <Heading2 size={16} />
-              </button>
-              <button onClick={() => toggleBlockStyle('-')} title="List" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0">
-                <List size={16} />
-              </button>
-              <button onClick={() => toggleBlockStyle('>')} title="Quote" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0">
-                <Quote size={16} />
-              </button>
-              <button onClick={() => insertText('[', '](url)')} title="Link" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0">
-                <Link size={16} />
-              </button>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                title="Image"
-                className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0"
-              >
-                <ImageIcon size={16} />
-              </button>
-              <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleImageUpload(file);
-                  // Reset input value to allow selecting same file again
-                  e.target.value = '';
-                }}
-              />
-              <div className="w-[1px] h-4 bg-black/10 dark:bg-white/10 mx-1 flex-shrink-0" />
-              <button
-                onClick={() => {
-                   // If in auto-height mode, switch to portrait first to enable pagination
-                   if (cardStyle.autoHeight) {
-                       useStore.getState().updateCardStyle({ autoHeight: false, orientation: 'portrait' });
-                   }
-                   
-                   // Wait for state to update (using setTimeout for simple sync)
-                   setTimeout(() => {
-                     const currentStyle = useStore.getState().cardStyle;
-                     const paginated = paginateMarkdown(markdown, currentStyle);
-                     if (paginated !== markdown) {
-                         setMarkdown(paginated);
-                         setShowPaginationToast(true);
-                         setTimeout(() => setShowPaginationToast(false), 4000);
-                     }
-                   }, 0);
-                }}
-                title="自动分页"
-                className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-90 hover:opacity-100 group flex-shrink-0"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path 
-                    d="M12 2L14.8 9.2L22 12L14.8 14.8L12 22L9.2 14.8L2 12L9.2 9.2L12 2Z" 
-                    fill="url(#star-gradient)"
-                    stroke="url(#star-gradient)"
-                    strokeWidth="1.5"
-                    strokeLinecap="round" 
-                    strokeLinejoin="round"
-                  />
-                  <defs>
-                    <linearGradient id="star-gradient" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
-                      <stop stopColor="#93C5FD" />
-                      <stop offset="0.5" stopColor="#60A5FA" />
-                      <stop offset="1" stopColor="#3B82F6" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-              </button>
-            </div>
-            
-            <textarea
-              ref={textareaRef}
-              className="flex-1 w-full h-full bg-transparent resize-none focus:outline-none font-mono text-sm leading-relaxed p-4 text-inherit placeholder-inherit/50 custom-scrollbar"
-              value={markdown}
-              onChange={(e) => setMarkdown(e.target.value)}
-              onPaste={handlePaste}
-              placeholder="Type your markdown here..."
+            {/* Hidden File Input for Image Upload */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleImageUpload(file);
+                // Reset input value to allow selecting same file again
+                e.target.value = '';
+              }}
             />
+
+            <div className="flex items-center gap-0.5 p-2 border-b border-black/10 dark:border-white/10 overflow-x-auto no-scrollbar">
+                <button onMouseDown={(e) => { e.preventDefault(); toggleInlineStyle('**'); }} title="Bold" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0">
+                  <Bold size={16} />
+                </button>
+                <button onMouseDown={(e) => { e.preventDefault(); toggleInlineStyle('*'); }} title="Italic" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0">
+                  <Italic size={16} />
+                </button>
+                <button onMouseDown={(e) => { e.preventDefault(); toggleInlineStyle('~~'); }} title="Strikethrough" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0">
+                  <Strikethrough size={16} />
+                </button>
+                <button onMouseDown={(e) => { e.preventDefault(); toggleBlockStyle('#'); }} title="H1" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0">
+                  <Heading1 size={16} />
+                </button>
+                <button onMouseDown={(e) => { e.preventDefault(); toggleBlockStyle('##'); }} title="H2" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0">
+                  <Heading2 size={16} />
+                </button>
+                <button onMouseDown={(e) => { e.preventDefault(); toggleBlockStyle('-'); }} title="List" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0">
+                  <List size={16} />
+                </button>
+                <button onMouseDown={(e) => { e.preventDefault(); toggleBlockStyle('>'); }} title="Quote" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0">
+                  <Quote size={16} />
+                </button>
+                <button onMouseDown={(e) => { e.preventDefault(); insertText('[', '](url)'); }} title="Link" className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0">
+                  <Link size={16} />
+                </button>
+                <button
+                  onMouseDown={(e) => { e.preventDefault(); fileInputRef.current?.click(); }}
+                  title="Image"
+                  className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-70 hover:opacity-100 flex-shrink-0"
+                >
+                  <ImageIcon size={16} />
+                </button>
+                <div className="w-[1px] h-4 bg-black/10 dark:bg-white/10 mx-1 flex-shrink-0" />
+                <button
+                  onClick={() => {
+                     // If in auto-height mode, switch to portrait first to enable pagination
+                     if (cardStyle.autoHeight) {
+                         useStore.getState().updateCardStyle({ autoHeight: false, orientation: 'portrait' });
+                     }
+                     
+                     // Wait for state to update (using setTimeout for simple sync)
+                     setTimeout(() => {
+                       const currentStyle = useStore.getState().cardStyle;
+                       const paginated = paginateMarkdown(markdown, currentStyle);
+                       if (paginated !== markdown) {
+                           setMarkdown(paginated);
+                           setShowPaginationToast(true);
+                           setTimeout(() => setShowPaginationToast(false), 4000);
+                       }
+                     }, 0);
+                  }}
+                  title="自动分页"
+                  className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-md transition-colors opacity-90 hover:opacity-100 group flex-shrink-0"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path 
+                      d="M12 2L14.8 9.2L22 12L14.8 14.8L12 22L9.2 14.8L2 12L9.2 9.2L12 2Z" 
+                      fill="url(#star-gradient)"
+                      stroke="url(#star-gradient)"
+                      strokeWidth="1.5"
+                      strokeLinecap="round" 
+                      strokeLinejoin="round"
+                    />
+                    <defs>
+                      <linearGradient id="star-gradient" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                        <stop stopColor="#93C5FD" />
+                        <stop offset="0.5" stopColor="#60A5FA" />
+                        <stop offset="1" stopColor="#3B82F6" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                </button>
+              </div>
+            
+              <textarea
+                ref={textareaRef}
+                className="flex-1 w-full h-full bg-transparent resize-none focus:outline-none font-mono text-sm leading-relaxed p-4 text-inherit placeholder-inherit/50 custom-scrollbar"
+                value={markdown}
+                onChange={(e) => setMarkdown(e.target.value)}
+                onPaste={handlePaste}
+                placeholder="Type your markdown here..."
+              />
             <div className="p-3 border-t border-black/10 dark:border-white/10 text-center space-y-1.5 bg-black/5 dark:bg-white/5">
               <div className="text-sm font-bold text-blue-600 dark:text-blue-400 opacity-90">
                 {t.editorHint}

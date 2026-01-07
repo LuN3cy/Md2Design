@@ -767,7 +767,7 @@ export const Sidebar = () => {
                 <div className="mb-4">
                   <label className="text-xs font-medium mb-2 block opacity-70">{t.presetFonts}</label>
                   <div className="grid grid-cols-2 gap-2">
-                    {['Inter', 'serif', 'monospace', 'Arial'].map((font) => (
+                    {['GoogleSans-Regular', 'serif', 'monospace', 'Arial'].map((font) => (
                       <button
                         key={font}
                         onClick={() => updateCardStyle({ fontFamily: font })}

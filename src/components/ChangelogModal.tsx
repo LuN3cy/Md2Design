@@ -1,5 +1,5 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, CheckCircle2, Sparkles, Monitor, ChevronRight, RotateCcw, Plus, Image as ImageIcon, Trash2, Maximize2, MessageSquare, ChevronDown, Check as CheckIcon, Layout, List, Square, Frame, ThumbsUp, Info, Github, Languages, Sun } from 'lucide-react';
+import { motion, AnimatePresence, useMotionValue, useAnimation } from 'framer-motion';
+import { X, CheckCircle2, Sparkles, Monitor, ChevronRight, RotateCcw, Plus, Image as ImageIcon, Trash2, Maximize2, MessageSquare, ChevronDown, Check as CheckIcon, Layout, List, Square, Frame, ThumbsUp, Info, Github, Languages, Sun, Type, FileText, Bold, Italic, Heading1, Heading2, StretchHorizontal, MousePointer2, Crop } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import { useStore } from '../store';
 import ReactMarkdown from 'react-markdown';
@@ -16,9 +16,31 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
   const t = useTranslation();
   const { language } = useStore();
   const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
   // Update data
   const updates = [
+    {
+      version: 'v1.8.3',
+      date: '2026-01-06',
+      title: {
+        en: 'Advanced Image Control',
+        zh: '进阶图片控制'
+      },
+      changes: {
+        en: [
+          'Four Image Editing Modes: Added "Fill", "Fit", "Crop", and "Stretch" modes. Crop mode allows freely adjusting the mask without scaling the image.',
+          'Smart Image Snapping: Added 15px snap threshold for horizontal centering, ensuring pixel-perfect alignment during drag-and-drop.',
+          'UI & Interaction: Enhanced image toolbar with intuitive icons and smart positioning; fixed text selection and visual artifacts in the editor.',
+        ],
+        zh: [
+          '四种图片编辑模式：新增“填充(Fill)”、“等比缩放”、“裁切(Crop)”和“拉伸(Stretch)”模式。裁切模式下可自由调整蒙版，不再受比例限制。',
+          '图片居中吸附：新增 15px 智能吸附阈值，拖拽图片靠近居中线时自动精准对齐，实现像素级排版。',
+          '界面与交互优化：重构了图片工具栏图标与定位逻辑；修复了编辑器下的文本选择、空行点击及视觉瑕疵问题。',
+        ]
+      },
+      demo: 'v183-features'
+    },
     {
       version: 'v1.8.2',
       date: '2026-01-06',
@@ -296,13 +318,38 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
     }
   ];
 
+  const currentUpdate = updates.find(u => u.version === selectedVersion) || updates[0];
+
+  // Group updates by minor version (e.g., v1.8.x under v1.8)
+  const groupedUpdates = updates.reduce((acc, update) => {
+    const versionParts = update.version.split('.');
+    const minorVersion = `${versionParts[0]}.${versionParts[1]}`;
+    if (!acc[minorVersion]) acc[minorVersion] = [];
+    acc[minorVersion].push(update);
+    return acc;
+  }, {} as Record<string, typeof updates>);
+
+  const minorVersions = Object.keys(groupedUpdates).sort((a, b) => {
+    const aParts = a.slice(1).split('.').map(Number);
+    const bParts = b.slice(1).split('.').map(Number);
+    if (aParts[0] !== bParts[0]) return bParts[0] - aParts[0];
+    return bParts[1] - aParts[1];
+  });
+
   useEffect(() => {
     if (isOpen && !selectedVersion) {
       setSelectedVersion(updates[0].version);
     }
   }, [isOpen]);
 
-  const currentUpdate = updates.find(u => u.version === selectedVersion) || updates[0];
+  // Auto-expand group of selected version
+  useEffect(() => {
+    if (selectedVersion) {
+      const versionParts = selectedVersion.split('.');
+      const minorVersion = `${versionParts[0]}.${versionParts[1]}`;
+      setExpandedGroups(prev => ({ ...prev, [minorVersion]: true }));
+    }
+  }, [selectedVersion]);
 
   return (
     <AnimatePresence>
@@ -362,29 +409,81 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
                </div>
                
                <div className="flex-1 overflow-y-auto custom-scrollbar px-3 pb-4 space-y-1">
-                  {updates.map((update) => (
-                    <button
-                      key={update.version}
-                      onClick={() => setSelectedVersion(update.version)}
-                      className={`w-full text-left px-4 py-3 rounded-xl transition-all flex items-center justify-between group ${
-                        selectedVersion === update.version 
-                          ? 'bg-white dark:bg-white/10 shadow-md dark:shadow-black/40' 
-                          : 'hover:bg-black/5 dark:hover:bg-white/5'
-                      }`}
-                    >
-                      <div>
-                        <div className={`text-sm font-bold ${selectedVersion === update.version ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'}`}>
-                          {update.version}
-                        </div>
-                        <div className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">
-                          {update.date}
-                        </div>
+                  {minorVersions.map((minorVersion) => {
+                    const group = groupedUpdates[minorVersion];
+                    const isExpanded = expandedGroups[minorVersion];
+                    const hasMultiple = group.length > 1;
+                    const latestInGroup = group[0];
+                    const isSelectedInGroup = selectedVersion?.startsWith(minorVersion);
+                    
+                    return (
+                      <div key={minorVersion} className="space-y-1">
+                        {/* Minor Version Header */}
+                        <button
+                          onClick={() => {
+                            if (hasMultiple) {
+                              setExpandedGroups(prev => ({ ...prev, [minorVersion]: !prev[minorVersion] }));
+                            } else {
+                              setSelectedVersion(latestInGroup.version);
+                            }
+                          }}
+                          className={`w-full text-left px-4 py-3 rounded-xl transition-all flex items-center justify-between group ${
+                            isSelectedInGroup && (!hasMultiple || !isExpanded)
+                              ? 'bg-white dark:bg-white/10 shadow-md dark:shadow-black/40' 
+                              : 'hover:bg-black/5 dark:hover:bg-white/5'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            {hasMultiple ? (
+                              <ChevronDown 
+                                size={14} 
+                                className={`text-slate-400 transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'}`} 
+                              />
+                            ) : (
+                              <div className="w-3.5" />
+                            )}
+                            <div>
+                              <div className={`text-sm font-bold ${isSelectedInGroup && (!hasMultiple || !isExpanded) ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                                {minorVersion}.x
+                              </div>
+                              {(!isExpanded || !hasMultiple) && (
+                                <div className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">
+                                  {latestInGroup.date}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          {isSelectedInGroup && (!hasMultiple || !isExpanded) && (
+                            <ChevronRight size={14} className="text-blue-500 opacity-100" />
+                          )}
+                        </button>
+
+                        {/* Patch Versions (Secondary Menu) */}
+                        {hasMultiple && isExpanded && (
+                          <div className="ml-4 pl-2 border-l border-black/5 dark:border-white/10 space-y-1 py-1">
+                            {group.map((update) => (
+                              <button
+                                key={update.version}
+                                onClick={() => setSelectedVersion(update.version)}
+                                className={`w-full text-left px-4 py-2.5 rounded-lg transition-all flex items-center justify-between group ${
+                                  selectedVersion === update.version 
+                                    ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' 
+                                    : 'text-slate-600 dark:text-slate-400 hover:bg-black/5 dark:hover:bg-white/5'
+                                }`}
+                              >
+                                <div className="text-xs font-semibold">
+                                  {update.version}
+                                </div>
+                                <div className="text-[9px] opacity-60 font-medium">
+                                  {update.date.split('-').slice(1).join('/')}
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      {selectedVersion === update.version && (
-                        <ChevronRight size={14} className="text-blue-500 opacity-100" />
-                      )}
-                    </button>
-                  ))}
+                    );
+                  })}
                </div>
 
                <div className="p-4 border-t border-black/5 dark:border-white/5 text-center md:text-left">
@@ -443,6 +542,14 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
                               {language === 'zh' ? '功能演示' : 'Feature Demo'}
                             </h3>
                          </div>
+
+                         {currentUpdate.demo === 'v183-features' && (
+                           <div className="bg-slate-100 dark:bg-[#0a0a0a] rounded-2xl p-6 md:p-8 border border-black/5 dark:border-white/10 shadow-inner min-h-[400px] flex flex-col items-center gap-12">
+                              <DemoImageModes />
+                              <div className="w-full h-px bg-black/5 dark:bg-white/10" />
+                              <DemoImageSnapping />
+                           </div>
+                         )}
 
                          {currentUpdate.demo === 'v181-features' && (
                            <div className="bg-slate-100 dark:bg-[#0a0a0a] rounded-2xl p-6 md:p-8 border border-black/5 dark:border-white/10 shadow-inner min-h-[400px] flex flex-col items-center gap-12">
@@ -565,6 +672,155 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
              onChange={setVal}
              icon={<Maximize2 size={14} />}
            />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const DemoImageModes = () => {
+  const { language } = useStore();
+  const [mode, setMode] = useState<'cover' | 'contain' | 'none' | 'fill'>('cover');
+  
+  return (
+    <div className="w-full max-w-md space-y-6">
+      <div className="text-xs font-bold text-slate-400 uppercase text-center mb-2">
+        {language === 'zh' ? '图片编辑模式演示' : 'Image Editing Modes Demo'}
+      </div>
+
+      <div className="flex flex-col gap-6 items-center">
+        {/* Image Container Mock */}
+        <div className="w-48 h-48 bg-white dark:bg-black/40 rounded-2xl border-2 border-blue-500/30 overflow-hidden relative group shadow-2xl">
+           <motion.div 
+             layout
+             className="w-full h-full relative"
+           >
+              <img 
+                src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&q=80" 
+                alt="Demo"
+                className={`w-full h-full transition-all duration-500 ${
+                  mode === 'cover' ? 'object-cover' : 
+                  mode === 'contain' ? 'object-contain' : 
+                  mode === 'fill' ? 'object-fill' : 
+                  'object-none scale-150'
+                }`}
+              />
+              
+              {/* Overlay Grid for Crop Mode */}
+              {mode === 'none' && (
+                <div className="absolute inset-0 border-2 border-blue-500 pointer-events-none">
+                  <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">
+                    {[...Array(9)].map((_, i) => (
+                      <div key={i} className="border-[0.5px] border-blue-500/30" />
+                    ))}
+                  </div>
+                </div>
+              )}
+           </motion.div>
+
+           {/* Toolbar Mock */}
+           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-white/90 dark:bg-black/90 backdrop-blur-md px-2 py-1.5 rounded-xl border border-black/10 shadow-xl flex items-center gap-1">
+              <button onClick={() => setMode('cover')} className={`p-1.5 rounded-lg ${mode === 'cover' ? 'bg-blue-500 text-white' : 'text-slate-400'}`}><Square size={14} /></button>
+              <button onClick={() => setMode('contain')} className={`p-1.5 rounded-lg ${mode === 'contain' ? 'bg-blue-500 text-white' : 'text-slate-400'}`}><Maximize2 size={14} /></button>
+              <button onClick={() => setMode('none')} className={`p-1.5 rounded-lg ${mode === 'none' ? 'bg-blue-500 text-white' : 'text-slate-400'}`}><Crop size={14} /></button>
+              <button onClick={() => setMode('fill')} className={`p-1.5 rounded-lg ${mode === 'fill' ? 'bg-blue-500 text-white' : 'text-slate-400'}`}><StretchHorizontal size={14} /></button>
+           </div>
+        </div>
+
+        <div className="text-center space-y-1">
+           <div className="text-sm font-bold text-slate-700 dark:text-slate-200">
+             {mode === 'cover' ? (language === 'zh' ? '填充 (Fill)' : 'Fill') :
+              mode === 'contain' ? (language === 'zh' ? '等比缩放' : 'Fit') :
+              mode === 'none' ? (language === 'zh' ? '裁切 (Crop)' : 'Crop') :
+              (language === 'zh' ? '拉伸 (Stretch)' : 'Stretch')}
+           </div>
+           <p className="text-[10px] text-slate-400 max-w-[200px]">
+             {mode === 'none' 
+               ? (language === 'zh' ? '借鉴 Figma 设计，裁切模式可自由调整蒙版而不改变图片比例。' : 'Like Figma, Crop mode lets you adjust the mask without scaling the image.')
+               : (language === 'zh' ? '快速切换不同展示比例，满足各种排版需求。' : 'Quickly switch between ratios for any layout need.')}
+           </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const DemoImageSnapping = () => {
+  const { language } = useStore();
+  const [isNear, setIsNear] = useState(false);
+  const x = useMotionValue(0);
+  const controls = useAnimation();
+  
+  const handleDrag = () => {
+    const currentX = x.get();
+    if (Math.abs(currentX) < 15) {
+      setIsNear(true);
+    } else {
+      setIsNear(false);
+    }
+  };
+
+  const handleDragEnd = () => {
+    const currentX = x.get();
+    if (Math.abs(currentX) < 15) {
+      controls.start({ x: 0, transition: { type: "spring", stiffness: 500, damping: 30 } });
+      setIsNear(true);
+    }
+  };
+
+  return (
+    <div className="w-full max-w-md space-y-6">
+      <div className="text-xs font-bold text-slate-400 uppercase text-center mb-2">
+        {language === 'zh' ? '图片智能居中吸附演示' : 'Smart Image Snapping Demo'}
+      </div>
+
+      <div className="h-48 bg-white dark:bg-[#151515] rounded-2xl border border-black/5 dark:border-white/10 relative overflow-hidden flex items-center justify-center shadow-xl">
+        {/* Center Line */}
+        <div className={`absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 transition-opacity duration-300 ${isNear ? 'bg-blue-500 opacity-100' : 'bg-slate-200 dark:bg-white/10 opacity-40'}`} />
+        
+        {/* Draggable Mockup */}
+        <motion.div
+          drag="x"
+          dragConstraints={{ left: -120, right: 120 }}
+          style={{ x }}
+          animate={controls}
+          onDrag={handleDrag}
+          onDragEnd={handleDragEnd}
+          className="relative group cursor-grab active:cursor-grabbing"
+        >
+          <div className={`w-24 h-24 rounded-xl border-2 transition-colors duration-300 flex flex-col items-center justify-center gap-2 ${isNear ? 'bg-blue-500/10 border-blue-500 shadow-lg shadow-blue-500/20' : 'bg-white dark:bg-black/20 border-slate-200 dark:border-white/10 shadow-sm'}`}>
+            <ImageIcon size={24} className={isNear ? 'text-blue-500' : 'text-slate-300'} />
+            <div className={`px-1.5 py-0.5 rounded text-[8px] font-bold ${isNear ? 'bg-blue-500 text-white' : 'bg-slate-100 dark:bg-white/5 text-slate-400'}`}>
+              {isNear ? 'SNAPPED' : 'DRAG ME'}
+            </div>
+            
+            {/* Mouse Pointer Mock */}
+            {!isNear && (
+              <motion.div 
+                className="absolute -top-4 -left-4 text-slate-900 dark:text-white drop-shadow-md pointer-events-none"
+                initial={{ opacity: 1 }}
+                animate={{ x: [0, 10, 0], y: [0, 5, 0] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <MousePointer2 size={16} fill="currentColor" />
+              </motion.div>
+            )}
+          </div>
+        </motion.div>
+        
+        {/* Hint text */}
+        <div className="absolute bottom-4 left-0 right-0 text-center">
+           <AnimatePresence mode="wait">
+             {isNear ? (
+               <motion.span key="s" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-[10px] font-bold text-blue-500">
+                 {language === 'zh' ? '已自动吸附至中心' : 'Snapped to center'}
+               </motion.span>
+             ) : (
+               <motion.span key="d" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[10px] text-slate-400">
+                 {language === 'zh' ? '请尝试左右拖动图片靠近中心线' : 'Try dragging the image near the center line'}
+               </motion.span>
+             )}
+           </AnimatePresence>
         </div>
       </div>
     </div>
