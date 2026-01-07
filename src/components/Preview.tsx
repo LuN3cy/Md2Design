@@ -35,7 +35,6 @@ const Card = memo(({
   const cardRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [isSnapX, setIsSnapX] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
   // Handle keyboard delete
@@ -84,21 +83,21 @@ const Card = memo(({
 
   // Sync images with spacers
   useEffect(() => {
-    if (!cardRef.current) return;
+    if (!contentRef.current) return;
     
     // We use a small delay to ensure markdown has rendered and DOM is ready
      const timer = setTimeout(() => {
        images.forEach((image) => {
          if (image.spacerId && image.isAttachedToSpacer) {
-           const spacer = cardRef.current?.querySelector(`[data-spacer-id="${image.spacerId}"]`);
+           const spacer = contentRef.current?.querySelector(`[data-spacer-id="${image.spacerId}"]`);
           if (spacer) {
             const rect = spacer.getBoundingClientRect();
-            const cardRect = cardRef.current?.getBoundingClientRect();
+            const containerRect = contentRef.current?.getBoundingClientRect();
             
-            if (cardRect) {
-              // Calculate center position of spacer relative to card
-              const targetX = (rect.left - cardRect.left) + (rect.width / 2) - (image.width / 2);
-              const targetY = (rect.top - cardRect.top) + (rect.height / 2) - (image.height / 2);
+            if (containerRect) {
+              // Calculate center position of spacer relative to container
+              const targetX = (rect.left - containerRect.left) + (rect.width / 2) - (image.width / 2);
+              const targetY = (rect.top - containerRect.top) + (rect.height / 2) - (image.height / 2);
               
               // Only update if position is significantly different to avoid loops or unnecessary state updates
               if (Math.abs(image.x - targetX) > 0.5 || Math.abs(image.y - targetY) > 0.5) {
@@ -173,13 +172,13 @@ const Card = memo(({
   };
 
   const components = useMemo(() => ({
-    h1: ({node, ...props}: any) => (
+    h1: ({node: _node, ...props}: any) => (
       <div className="flex flex-col items-center mb-2 mt-4 first:mt-0">
         <h1 style={{color: cardStyle.h1Color || cardStyle.textColor, fontSize: `${cardStyle.h1FontSize}px`}} className="font-bold mb-1 text-center" {...props} />
         <div className="h-1 w-24 rounded-full" style={{backgroundColor: cardStyle.h1LineColor || cardStyle.accentColor}} />
       </div>
     ),
-    h2: ({node, ...props}: any) => (
+    h2: ({node: _node, ...props}: any) => (
       <div className="flex justify-center mb-2 mt-4 first:mt-0">
         <h2 
           style={{
@@ -192,7 +191,7 @@ const Card = memo(({
         />
       </div>
     ),
-    h3: ({node, ...props}: any) => (
+    h3: ({node: _node, ...props}: any) => (
       <h3 
         style={{
           color: cardStyle.h3Color || cardStyle.textColor,
@@ -203,7 +202,7 @@ const Card = memo(({
         {...props} 
       />
     ),
-    h4: ({node, ...props}: any) => (
+    h4: ({node: _node, ...props}: any) => (
        <h4
         style={{
           color: cardStyle.textColor,
@@ -213,7 +212,7 @@ const Card = memo(({
         {...props}
        />
     ),
-    h5: ({node, ...props}: any) => (
+    h5: ({node: _node, ...props}: any) => (
        <h5
         style={{
           color: cardStyle.textColor,
@@ -223,7 +222,7 @@ const Card = memo(({
         {...props}
        />
     ),
-    h6: ({node, ...props}: any) => (
+    h6: ({node: _node, ...props}: any) => (
        <h6
         style={{
           color: cardStyle.textColor,
@@ -233,8 +232,8 @@ const Card = memo(({
         {...props}
        />
     ),
-    del: ({node, ...props}: any) => <del style={{color: cardStyle.textColor, opacity: 0.7}} {...props} />,
-    p: ({ node, children, ...props }: any) => {
+    del: ({node: _node, ...props}: any) => <del style={{color: cardStyle.textColor, opacity: 0.7}} {...props} />,
+    p: ({ node: _node, children, ...props }: any) => {
       // Check if children is just the &zwnj; character
       const isZwnj = Array.isArray(children) 
         ? children.length === 1 && children[0] === '\u200C'
@@ -253,18 +252,18 @@ const Card = memo(({
         </p>
       );
     },
-    ul: ({node, ...props}: any) => <ul style={{color: cardStyle.textColor}} className="mb-4 list-disc list-outside !pl-5 m-0 space-y-1" {...props} />,
-    ol: ({node, ...props}: any) => <ol style={{color: cardStyle.textColor}} className="mb-4 list-decimal list-outside !pl-6 m-0 space-y-1" {...props} />,
-    li: ({node, ...props}: any) => <li className="marker:opacity-70 [&>p]:inline" {...props} />,
-    table: ({node, ...props}: any) => <div className="overflow-x-auto mb-6 rounded-lg opacity-90"><table className="w-full text-left text-sm border-collapse border-none" {...props} /></div>,
-    thead: ({node, ...props}: any) => <thead className="bg-black/5 dark:bg-white/10 font-semibold border-none" {...props} />,
-    tbody: ({node, ...props}: any) => <tbody className="border-none" {...props} />,
-    tr: ({node, ...props}: any) => <tr className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors border-none" {...props} />,
-    th: ({node, ...props}: any) => <th className="p-3 whitespace-nowrap border-none" {...props} />,
-    td: ({node, ...props}: any) => <td className="p-3 border-none" {...props} />,
+    ul: ({node: _node, ...props}: any) => <ul style={{color: cardStyle.textColor}} className="mb-4 list-disc list-outside !pl-5 m-0 space-y-1" {...props} />,
+    ol: ({node: _node, ...props}: any) => <ol style={{color: cardStyle.textColor}} className="mb-4 list-decimal list-outside !pl-6 m-0 space-y-1" {...props} />,
+    li: ({node: _node, ...props}: any) => <li className="marker:opacity-70 [&>p]:inline" {...props} />,
+    table: ({node: _node, ...props}: any) => <div className="overflow-x-auto mb-6 rounded-lg opacity-90"><table className="w-full text-left text-sm border-collapse border-none" {...props} /></div>,
+    thead: ({node: _node, ...props}: any) => <thead className="bg-black/5 dark:bg-white/10 font-semibold border-none" {...props} />,
+    tbody: ({node: _node, ...props}: any) => <tbody className="border-none" {...props} />,
+    tr: ({node: _node, ...props}: any) => <tr className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors border-none" {...props} />,
+    th: ({node: _node, ...props}: any) => <th className="p-3 whitespace-nowrap border-none" {...props} />,
+    td: ({node: _node, ...props}: any) => <td className="p-3 border-none" {...props} />,
     hr: () => null,
-    pre: ({node, children}: any) => <>{children}</>,
-    blockquote: ({node, ...props}: any) => (
+    pre: ({node: _node, children}: any) => <>{children}</>,
+    blockquote: ({node: _node, ...props}: any) => (
       <blockquote 
         style={{ 
           borderLeft: `4px solid ${cardStyle.blockquoteBorderColor || cardStyle.accentColor}`, 
@@ -274,8 +273,8 @@ const Card = memo(({
         {...props} 
       />
     ),
-    a: ({node, ...props}: any) => <a style={{color: cardStyle.accentColor}} className="underline decoration-auto underline-offset-2 break-all" {...props} />,
-    img: ({ node, src, alt, ...props }: any) => {
+    a: ({node: _node, ...props}: any) => <a style={{color: cardStyle.accentColor}} className="underline decoration-auto underline-offset-2 break-all" {...props} />,
+    img: ({ node: _node, src, alt, ...props }: any) => {
       if (src === 'spacer' || src?.startsWith('spacer?')) {
         const spacerId = src.includes('id=') ? src.split('id=')[1] : null;
         return (
@@ -419,14 +418,14 @@ const Card = memo(({
                       updateCardImage(index, image.id, { isAttachedToSpacer: false });
                     }
                   }}
-                  onDrag={(e, d) => {
+                  onDrag={(_e, d) => {
                     const centerX = width / 2;
                     const imageCenterX = d.x + image.width / 2;
                     const snapThreshold = 10;
                     const isSnapped = Math.abs(imageCenterX - centerX) < snapThreshold;
                     setIsSnapX(isSnapped);
                   }}
-                  onDragStop={(e, d) => {
+                  onDragStop={(_e, d) => {
                     setDraggingId(null);
                     setIsSnapX(false);
                     const centerX = width / 2;
@@ -438,7 +437,7 @@ const Card = memo(({
                     updateCardImage(index, image.id, { x: finalX, y: d.y });
                   }}
                   onResizeStart={() => setDraggingId(image.id)}
-                  onResize={(e, direction, ref, delta, position) => {
+                  onResize={(_e, _direction, ref, _delta, position) => {
                     const newWidth = parseInt(ref.style.width);
                     const newHeight = parseInt(ref.style.height);
                     
@@ -590,7 +589,7 @@ const Card = memo(({
 Card.displayName = 'Card';
 
 export const Preview = () => {
-  const { markdown, setIsScrolled, setActiveCardIndex, cardStyle, isEditorOpen, isSidebarOpen, previewZoom, setPreviewZoom, setSelectedImageId: storeSetSelectedImageId } = useStore();
+  const { markdown, setIsScrolled, setActiveCardIndex, cardStyle, isEditorOpen, isSidebarOpen, previewZoom, setPreviewZoom } = useStore();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
   const { width, height } = getCardDimensions(cardStyle);
