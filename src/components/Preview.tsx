@@ -12,6 +12,7 @@ import { Trash2, Maximize2, StretchHorizontal, Crop, Square } from 'lucide-react
 const Card = memo(({ 
   content, 
   index, 
+  totalPages,
   scale, 
   width, 
   height,
@@ -20,6 +21,7 @@ const Card = memo(({
 }: { 
   content: string, 
   index: number,
+  totalPages: number,
   scale: number,
   width: number,
   height: number,
@@ -243,7 +245,10 @@ const Card = memo(({
         {...props}
        />
     ),
-    del: ({ node: _node, style, ...props }: any) => <del style={{color: cardStyle.textColor, opacity: 0.7, ...style}} {...props} />,
+    strong: ({ node: _node, style, ...props }: any) => <strong style={{color: cardStyle.textColor, fontWeight: 'bold', ...style}} {...props} />,
+    em: ({ node: _node, style, ...props }: any) => <em style={{color: cardStyle.textColor, fontStyle: 'italic', ...style}} {...props} />,
+    u: ({ node: _node, style, ...props }: any) => <u style={{color: cardStyle.underlineColor || cardStyle.accentColor, textDecoration: 'underline', ...style}} {...props} />,
+    del: ({ node: _node, style, ...props }: any) => <del style={{color: cardStyle.strikethroughColor || cardStyle.textColor, opacity: 0.7, ...style}} {...props} />,
     p: ({ node: _node, children, style, ...props }: any) => {
       // Check if children is just the &zwnj; character
       const isZwnj = Array.isArray(children) 
@@ -438,6 +443,99 @@ const Card = memo(({
                 </ReactMarkdown>
               </div>
             </div>
+
+            {/* Footer: Watermark and Page Number (Absolute Positioned in Bottom Padding Area) */}
+            {(cardStyle.watermark?.enabled || cardStyle.pageNumber?.enabled) && (
+              <div 
+                className="absolute left-0 right-0 bottom-0 flex items-center pointer-events-none z-20"
+                style={{
+                  height: `${cardStyle.cardPadding.bottom}px`,
+                  paddingLeft: `${cardStyle.cardPadding.left}px`,
+                  paddingRight: `${cardStyle.cardPadding.right}px`,
+                }}
+              >
+                {/* Left Position */}
+                <div className="flex-1 flex justify-start items-center gap-3">
+                  {cardStyle.pageNumber?.enabled && cardStyle.pageNumber.position === 'left' && (
+                    <span style={{ 
+                      opacity: cardStyle.pageNumber.opacity, 
+                      fontSize: `${cardStyle.pageNumber.fontSize}px`,
+                      color: cardStyle.pageNumber.color || cardStyle.textColor,
+                      fontFamily: 'inherit',
+                      fontWeight: 'bold'
+                    }}>
+                      {index + 1}
+                    </span>
+                  )}
+                  {cardStyle.watermark?.enabled && cardStyle.watermark.position === 'left' && (
+                    <span style={{ 
+                      opacity: cardStyle.watermark.opacity, 
+                      fontSize: `${cardStyle.watermark.fontSize}px`,
+                      color: cardStyle.watermark.color || cardStyle.textColor,
+                      fontFamily: 'inherit',
+                      textTransform: cardStyle.watermark.uppercase ? 'uppercase' : 'none',
+                      letterSpacing: '0.05em'
+                    }}>
+                      {cardStyle.watermark.content}
+                    </span>
+                  )}
+                </div>
+
+                {/* Center Position */}
+                <div className="flex-1 flex justify-center items-center gap-3">
+                  {cardStyle.pageNumber?.enabled && cardStyle.pageNumber.position === 'center' && (
+                    <span style={{ 
+                      opacity: cardStyle.pageNumber.opacity, 
+                      fontSize: `${cardStyle.pageNumber.fontSize}px`,
+                      color: cardStyle.pageNumber.color || cardStyle.textColor,
+                      fontFamily: 'inherit',
+                      fontWeight: 'bold'
+                    }}>
+                      {index + 1}
+                    </span>
+                  )}
+                  {cardStyle.watermark?.enabled && cardStyle.watermark.position === 'center' && (
+                    <span style={{ 
+                      opacity: cardStyle.watermark.opacity, 
+                      fontSize: `${cardStyle.watermark.fontSize}px`,
+                      color: cardStyle.watermark.color || cardStyle.textColor,
+                      fontFamily: 'inherit',
+                      textTransform: cardStyle.watermark.uppercase ? 'uppercase' : 'none',
+                      letterSpacing: '0.05em'
+                    }}>
+                      {cardStyle.watermark.content}
+                    </span>
+                  )}
+                </div>
+
+                {/* Right Position */}
+                <div className="flex-1 flex justify-end items-center gap-3">
+                  {cardStyle.pageNumber?.enabled && cardStyle.pageNumber.position === 'right' && (
+                    <span style={{ 
+                      opacity: cardStyle.pageNumber.opacity, 
+                      fontSize: `${cardStyle.pageNumber.fontSize}px`,
+                      color: cardStyle.pageNumber.color || cardStyle.textColor,
+                      fontFamily: 'inherit',
+                      fontWeight: 'bold'
+                    }}>
+                      {index + 1}
+                    </span>
+                  )}
+                  {cardStyle.watermark?.enabled && cardStyle.watermark.position === 'right' && (
+                    <span style={{ 
+                      opacity: cardStyle.watermark.opacity, 
+                      fontSize: `${cardStyle.watermark.fontSize}px`,
+                      color: cardStyle.watermark.color || cardStyle.textColor,
+                      fontFamily: 'inherit',
+                      textTransform: cardStyle.watermark.uppercase ? 'uppercase' : 'none',
+                      letterSpacing: '0.05em'
+                    }}>
+                      {cardStyle.watermark.content}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
 
             {isSnapX && (
               <div 
@@ -735,6 +833,7 @@ export const Preview = () => {
           key={index} 
           content={pageContent} 
           index={index}
+          totalPages={pages.length}
           scale={scale}
           width={width}
           height={height}

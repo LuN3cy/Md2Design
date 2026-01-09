@@ -75,7 +75,7 @@ export const paginateMarkdown = (markdown: string, style: CardStyle): string => 
   const verticalPadding = style.cardPadding ? (style.cardPadding.top + style.cardPadding.bottom) : (style.contentPadding * 2);
   
   const hasFooter = style.pageNumber.enabled || style.watermark.enabled;
-  const footerHeight = hasFooter ? 44 : 12; 
+  const footerHeight = hasFooter ? 8 : 0; 
   
   // Scale maxContentHeight according to the ratio of actual width to base width if needed,
   // but for most cases, we want the pagination to be consistent.

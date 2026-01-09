@@ -705,6 +705,21 @@ export const Sidebar = () => {
                   <ColorSectionWrapper>
                     <div className="grid grid-cols-2 gap-3">
                       <ColorPicker 
+                        label={t.underlineColor}
+                        color={cardStyle.underlineColor || '#3b82f6'}
+                        onChange={(val) => handleColorChange('underlineColor', val)}
+                      />
+                      <ColorPicker 
+                        label={t.strikethroughColor}
+                        color={cardStyle.strikethroughColor || '#000000'}
+                        onChange={(val) => handleColorChange('strikethroughColor', val)}
+                      />
+                    </div>
+                  </ColorSectionWrapper>
+
+                  <ColorSectionWrapper>
+                    <div className="grid grid-cols-2 gap-3">
+                      <ColorPicker 
                         label={t.blockquoteBackground}
                         color={cardStyle.blockquoteBackgroundColor.substring(0, 7)}
                         onChange={(val) => handleColorChange('blockquoteBackgroundColor', val + '20')}
@@ -992,6 +1007,16 @@ export const Sidebar = () => {
                             color={cardStyle.watermark?.color || cardStyle.textColor} 
                             onChange={(val) => updateCardStyle({ watermark: { ...(cardStyle.watermark || {}), color: val } } as any)} 
                           />
+
+                          <div className="flex items-center justify-between mt-2 pt-2 border-t border-black/5 dark:border-white/5">
+                            <label className="text-[10px] uppercase tracking-wider opacity-60">{t.uppercase}</label>
+                            <button 
+                              onClick={() => updateCardStyle({ watermark: { ...(cardStyle.watermark || {}), uppercase: !cardStyle.watermark?.uppercase } } as any)}
+                              className={`w-8 h-4 rounded-full transition-colors relative ${cardStyle.watermark?.uppercase ? 'bg-slate-900 dark:bg-white/90' : 'bg-black/10 dark:bg-white/10'}`}
+                            >
+                              <div className={`w-2.5 h-2.5 rounded-full bg-white dark:bg-black/80 absolute top-0.75 transition-all ${cardStyle.watermark?.uppercase ? 'left-4.5' : 'left-1'}`} />
+                            </button>
+                          </div>
                         </AdvancedToggle>
                       </div>
                     )}

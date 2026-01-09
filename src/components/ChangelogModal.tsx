@@ -22,6 +22,32 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
   // Update data
   const updates = [
     {
+      version: 'v1.9.1',
+      date: '2026-01-10',
+      title: {
+        en: 'Text Styling & Watermark Polish',
+        zh: '文本样式修复与水印优化'
+      },
+      changes: {
+        en: [
+          '1. Fixed: Bold, Italic, and Strikethrough text now correctly apply the configured text color.',
+          '2. Added: Independent color controls for Underline and Strikethrough text.',
+          '3. Added: Underline shortcut button (<u>) in the editor toolbar.',
+          '4. Added: Uppercase toggle for Watermark settings (allows disabling all-caps mode).',
+          '5. UI: Improved color settings layout for better accessibility.',
+          '6. Fixed: An issue where the watermark and page number might not display in the footer.',
+        ],
+        zh: [
+          '1. 修复：加粗、斜体和删除线文本现在可以正确应用所选的颜色；',
+          '2. 新增：下划线和删除线的独立颜色控制功能；',
+          '3. 新增：编辑器工具栏下划线快捷按钮（支持 <u> 标签）；',
+          '4. 新增：水印大小写开关，支持关闭强制大写模式；',
+          '5. 优化：改进了侧边栏颜色设置的布局；',
+          '6. 修复：水印和页码在卡片底部可能无法显示的问题。',
+        ]
+      }
+    },
+    {
       version: 'v1.9.0',
       date: '2026-01-08',
       title: {
@@ -1739,7 +1765,7 @@ const DemoPaddingCustomization = () => {
 
 const DemoFooterCustomization = () => {
   const { language } = useStore();
-  const [watermark, setWatermark] = useState({ fontSize: 10, opacity: 0.5, position: 'center' as 'left' | 'center' | 'right', color: '' });
+  const [watermark, setWatermark] = useState({ fontSize: 10, opacity: 0.5, position: 'center' as 'left' | 'center' | 'right', color: '', uppercase: true });
   const [pageNumber, setPageNumber] = useState({ fontSize: 10, opacity: 0.5, position: 'center' as 'left' | 'center' | 'right', color: '' });
   const [activeTab, setActiveTab] = useState<'watermark' | 'pageNumber'>('pageNumber');
 
@@ -1849,6 +1875,18 @@ const DemoFooterCustomization = () => {
               ))}
             </div>
           </div>
+
+          {activeTab === 'watermark' && (
+            <div className="flex items-center justify-between pt-2 border-t border-black/5 dark:border-white/5">
+              <span className="text-[10px] font-bold text-slate-400 uppercase">{language === 'zh' ? '全大写' : 'Uppercase'}</span>
+              <button 
+                onClick={() => setWatermark({ ...watermark, uppercase: !watermark.uppercase })}
+                className={`w-8 h-4 rounded-full transition-colors relative ${watermark.uppercase ? 'bg-blue-500' : 'bg-black/10 dark:bg-white/10'}`}
+              >
+                <div className={`w-2.5 h-2.5 rounded-full bg-white absolute top-0.75 transition-all ${watermark.uppercase ? 'left-4.5' : 'left-1'}`} />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Real-time Preview Area */}
@@ -1864,7 +1902,8 @@ const DemoFooterCustomization = () => {
                 transform: watermark.position === 'center' ? 'translateX(-50%)' : 'none',
                 fontSize: `${watermark.fontSize}px`,
                 opacity: watermark.opacity,
-                color: watermark.color || 'currentColor'
+                color: watermark.color || 'currentColor',
+                textTransform: watermark.uppercase ? 'uppercase' : 'none'
               }}
             >
               MD2DESIGN

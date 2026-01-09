@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useStore } from '../store';
 import { useTranslation } from '../i18n';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Edit3, Bold, Italic, List, ListOrdered, Quote, Heading1, Heading2, Heading3, Heading4, Link, Image as ImageIcon, Check, Strikethrough, AlignLeft, AlignCenter, AlignRight, CornerDownLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit3, Bold, Italic, List, ListOrdered, Quote, Heading1, Heading2, Heading3, Heading4, Link, Image as ImageIcon, Check, Strikethrough, AlignLeft, AlignCenter, AlignRight, CornerDownLeft, Underline } from 'lucide-react';
 import { htmlToMarkdown } from '../utils/turndown';
 import { paginateMarkdown } from '../utils/pagination';
 
@@ -76,6 +76,41 @@ export const Editor = () => {
     const end = textarea.selectionEnd;
     const selected = markdown.substring(start, end);
     
+    // Support for <u> tags
+    if (marker === '<u>') {
+      const regex = /^<u>(.*)<\/u>$/s;
+      if (regex.test(selected)) {
+        const clean = selected.replace(regex, '$1');
+        const newText = markdown.substring(0, start) + clean + markdown.substring(end);
+        setMarkdown(newText);
+        setTimeout(() => {
+          textarea.focus();
+          textarea.setSelectionRange(start, start + clean.length);
+        }, 0);
+        return;
+      }
+      
+      const before = markdown.substring(start - 3, start);
+      const after = markdown.substring(end, end + 4);
+      if (before === '<u>' && after === '</u>') {
+        const newText = markdown.substring(0, start - 3) + selected + markdown.substring(end + 4);
+        setMarkdown(newText);
+        setTimeout(() => {
+          textarea.focus();
+          textarea.setSelectionRange(start - 3, end - 3);
+        }, 0);
+      } else {
+        const wrapped = `<u>${selected}</u>`;
+        const newText = markdown.substring(0, start) + wrapped + markdown.substring(end);
+        setMarkdown(newText);
+        setTimeout(() => {
+          textarea.focus();
+          textarea.setSelectionRange(start + 3, end + 3);
+        }, 0);
+      }
+      return;
+    }
+
     const escapedMarker = marker.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
     let regex;
     if (marker === '**') {
@@ -438,6 +473,9 @@ export const Editor = () => {
                     </button>
                     <button onMouseDown={(e) => { e.preventDefault(); toggleInlineStyle('~~'); }} title="删除线" className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded transition-colors opacity-70 hover:opacity-100">
                       <Strikethrough size={16} />
+                    </button>
+                    <button onMouseDown={(e) => { e.preventDefault(); toggleInlineStyle('<u>'); }} title="下划线" className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded transition-colors opacity-70 hover:opacity-100">
+                      <Underline size={16} />
                     </button>
                   </div>
 

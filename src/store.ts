@@ -109,6 +109,8 @@ export type CardStyle = {
   h2BackgroundColor: string; // Background for H2 pill
   h3Color: string;
   h3LineColor: string;
+  underlineColor: string;
+  strikethroughColor: string;
 
   // Shadow
   shadowEnabled: boolean;
@@ -129,7 +131,8 @@ export type CardStyle = {
     position: 'left' | 'center' | 'right';
     opacity: number;
     fontSize: number;
-    color?: string;
+    color: string;
+    uppercase: boolean;
   };
 
   // Page Number
@@ -306,6 +309,8 @@ const INITIAL_CARD_STYLE: CardStyle = {
   h2BackgroundColor: '#3b82f6',
   h3Color: '#000000',
   h3LineColor: '#3b82f6',
+  underlineColor: '#3b82f6',
+  strikethroughColor: '#000000',
   shadowEnabled: false,
   shadow: 'none',
   shadowConfig: {
@@ -322,7 +327,8 @@ const INITIAL_CARD_STYLE: CardStyle = {
     position: 'center',
     opacity: 0.5,
     fontSize: 10,
-    color: '' // Empty means use default text color
+    color: '', // Empty means use default text color
+    uppercase: true
   },
   pageNumber: {
     enabled: false,
