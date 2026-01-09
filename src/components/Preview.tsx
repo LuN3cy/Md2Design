@@ -12,7 +12,6 @@ import { Trash2, Maximize2, StretchHorizontal, Crop, Square } from 'lucide-react
 const Card = memo(({ 
   content, 
   index, 
-  totalPages,
   scale, 
   width, 
   height,
@@ -21,7 +20,6 @@ const Card = memo(({
 }: { 
   content: string, 
   index: number,
-  totalPages: number,
   scale: number,
   width: number,
   height: number,
@@ -833,7 +831,6 @@ export const Preview = () => {
           key={index} 
           content={pageContent} 
           index={index}
-          totalPages={pages.length}
           scale={scale}
           width={width}
           height={height}
