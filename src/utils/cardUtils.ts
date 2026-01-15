@@ -6,12 +6,11 @@ export const getCardDimensions = (cardStyle: CardStyle) => {
 
   if (cardStyle.aspectRatio !== 'custom' && !cardStyle.autoHeight) {
     const [w, h] = cardStyle.aspectRatio.split(':').map(Number);
-    const baseSize = 500; // Base width for preview scaling
+    const baseWidth = cardStyle.width || 800;
     
     // Determine dimensions based on orientation and aspect ratio
     if (cardStyle.orientation === 'portrait') {
-      width = baseSize;
-      height = width * (h / w); 
+      width = baseWidth;
       // Swap dimensions if portrait to ensure vertical orientation
       if (w > h) {
          height = width * (w / h);
@@ -20,24 +19,9 @@ export const getCardDimensions = (cardStyle: CardStyle) => {
       }
     } else {
       // Landscape
-      width = baseSize;
-      if (w > h) {
-        height = width * (h / w);
-      } else {
-        height = width * (h / w);
-      }
+      width = baseWidth;
+      height = width * (h / w);
     }
-    
-    // Simplification logic for calculation consistency
-    let ratio = w / h;
-    if (cardStyle.orientation === 'portrait') {
-        if (ratio > 1) ratio = 1 / ratio; 
-    } else {
-        if (ratio < 1) ratio = 1 / ratio; 
-    }
-    
-    width = baseSize;
-    height = baseSize / ratio;
   }
   
   return { width, height };

@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 import rehypeRaw from 'rehype-raw';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import { motion } from 'framer-motion';
 import { Rnd } from 'react-rnd';
 import { Trash2, Maximize2, StretchHorizontal, Crop, Square } from 'lucide-react';
@@ -81,7 +82,7 @@ const Card = memo(({
     paddingLeft: `${cardStyle.cardPadding?.left ?? cardStyle.contentPadding}px`,
   };
 
-  const images = cardImages[index] || [];
+  const images = useMemo(() => cardImages[index] || [], [cardImages, index]);
 
   // Sync images with spacers
   useEffect(() => {
@@ -173,8 +174,15 @@ const Card = memo(({
      }
   };
 
-  const components = useMemo(() => ({
-    h1: ({ node: _node, style, ...props }: any) => (
+  interface MarkdownComponentProps {
+    node?: unknown;
+    children?: React.ReactNode;
+    style?: React.CSSProperties;
+    [key: string]: unknown;
+  }
+
+  const components: Record<string, React.FC<MarkdownComponentProps>> = useMemo(() => ({
+    h1: ({ style, ...props }) => (
       <h1 
         style={{
           color: cardStyle.h1Color || cardStyle.textColor, 
@@ -186,7 +194,7 @@ const Card = memo(({
         {...props} 
       />
     ),
-    h2: ({ node: _node, style, ...props }: any) => (
+    h2: ({ style, ...props }) => (
       <h2 
         style={{
           backgroundColor: cardStyle.h2BackgroundColor || cardStyle.accentColor, 
@@ -198,7 +206,7 @@ const Card = memo(({
         {...props} 
       />
     ),
-    h3: ({ node: _node, style, ...props }: any) => (
+    h3: ({ style, ...props }) => (
       <h3 
         style={{
           color: cardStyle.h3Color || cardStyle.textColor,
@@ -210,7 +218,7 @@ const Card = memo(({
         {...props} 
       />
     ),
-    h4: ({ node: _node, style, ...props }: any) => (
+    h4: ({ style, ...props }) => (
        <h4
         style={{
           color: cardStyle.textColor,
@@ -221,7 +229,7 @@ const Card = memo(({
         {...props}
        />
     ),
-    h5: ({ node: _node, style, ...props }: any) => (
+    h5: ({ style, ...props }) => (
        <h5
         style={{
           color: cardStyle.textColor,
@@ -232,7 +240,7 @@ const Card = memo(({
         {...props}
        />
     ),
-    h6: ({ node: _node, style, ...props }: any) => (
+    h6: ({ style, ...props }) => (
        <h6
         style={{
           color: cardStyle.textColor,
@@ -243,11 +251,11 @@ const Card = memo(({
         {...props}
        />
     ),
-    strong: ({ node: _node, style, ...props }: any) => <strong style={{color: cardStyle.textColor, fontWeight: 'bold', ...style}} {...props} />,
-    em: ({ node: _node, style, ...props }: any) => <em style={{color: cardStyle.textColor, fontStyle: 'italic', ...style}} {...props} />,
-    u: ({ node: _node, style, ...props }: any) => <u style={{color: cardStyle.underlineColor || cardStyle.accentColor, textDecoration: 'underline', ...style}} {...props} />,
-    del: ({ node: _node, style, ...props }: any) => <del style={{color: cardStyle.strikethroughColor || cardStyle.textColor, opacity: 0.7, ...style}} {...props} />,
-    p: ({ node: _node, children, style, ...props }: any) => {
+    strong: ({ style, ...props }) => <strong style={{color: cardStyle.textColor, fontWeight: 'bold', ...style}} {...props} />,
+    em: ({ style, ...props }) => <em style={{color: cardStyle.textColor, fontStyle: 'italic', ...style}} {...props} />,
+    u: ({ style, ...props }) => <u style={{color: cardStyle.underlineColor || cardStyle.accentColor, textDecoration: 'underline', ...style}} {...props} />,
+    del: ({ style, ...props }) => <del style={{color: cardStyle.strikethroughColor || cardStyle.textColor, opacity: 0.7, ...style}} {...props} />,
+    p: ({ children, style, ...props }) => {
       // Check if children is just the &zwnj; character
       const isZwnj = Array.isArray(children) 
         ? children.length === 1 && children[0] === '\u200C'
@@ -266,7 +274,7 @@ const Card = memo(({
         </p>
       );
     },
-    div: ({ node: _node, style, children, ...props }: any) => {
+    div: ({ style, children, ...props }) => {
        // If it's a wrapper for alignment, we don't want extra margin
        const isAlignment = style?.textAlign;
        return (
@@ -279,7 +287,7 @@ const Card = memo(({
          </div>
        );
      },
-     span: ({ node: _node, style, children, ...props }: any) => {
+     span: ({ style, children, ...props }) => {
        const isAlignment = style?.textAlign;
        return (
          <span 
@@ -291,18 +299,18 @@ const Card = memo(({
          </span>
        );
      },
-    ul: ({ node: _node, ...props }: any) => <ul style={{color: cardStyle.textColor, fontSize: 'inherit'}} className="mb-4 list-disc list-outside !pl-5 m-0 space-y-1" {...props} />,
-    ol: ({ node: _node, ...props }: any) => <ol style={{color: cardStyle.textColor, fontSize: 'inherit'}} className="mb-4 list-decimal list-outside !pl-6 m-0 space-y-1" {...props} />,
-    li: ({ node: _node, ...props }: any) => <li style={{ fontSize: 'inherit' }} className="marker:opacity-70 [&>p]:inline" {...props} />,
-    table: ({ node: _node, ...props }: any) => <div className="overflow-x-auto mb-6 rounded-lg opacity-90"><table className="w-full text-left text-sm border-collapse border-none" {...props} /></div>,
-    thead: ({ node: _node, ...props }: any) => <thead className="bg-black/5 dark:bg-white/10 font-semibold border-none" {...props} />,
-    tbody: ({ node: _node, ...props }: any) => <tbody className="border-none" {...props} />,
-    tr: ({ node: _node, ...props }: any) => <tr className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors border-none" {...props} />,
-    th: ({ node: _node, ...props }: any) => <th className="p-3 whitespace-nowrap border-none" {...props} />,
-    td: ({ node: _node, ...props }: any) => <td className="p-3 border-none" {...props} />,
+    ul: (props) => <ul style={{color: cardStyle.textColor, fontSize: 'inherit'}} className="mb-4 list-disc list-outside pl-5! m-0 space-y-1" {...props} />,
+    ol: (props) => <ol style={{color: cardStyle.textColor, fontSize: 'inherit'}} className="mb-4 list-decimal list-outside pl-6! m-0 space-y-1" {...props} />,
+    li: (props) => <li style={{ fontSize: 'inherit' }} className="marker:opacity-70 [&>p]:inline" {...props} />,
+    table: (props) => <div className="overflow-x-auto mb-6 rounded-lg opacity-90"><table className="w-full text-left text-sm border-collapse border-none" {...props} /></div>,
+    thead: (props) => <thead className="bg-black/5 dark:bg-white/10 font-semibold border-none" {...props} />,
+    tbody: (props) => <tbody className="border-none" {...props} />,
+    tr: (props) => <tr className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors border-none" {...props} />,
+    th: (props) => <th className="p-3 whitespace-nowrap border-none" {...props} />,
+    td: (props) => <td className="p-3 border-none" {...props} />,
     hr: () => null,
-    pre: ({ node: _node, children }: any) => <>{children}</>,
-    blockquote: ({ node: _node, ...props }: any) => (
+    pre: ({ children }) => <>{children}</>,
+    blockquote: (props) => (
       <blockquote 
         style={{ 
           borderLeft: `4px solid ${cardStyle.blockquoteBorderColor || cardStyle.accentColor}`, 
@@ -310,12 +318,13 @@ const Card = memo(({
           color: cardStyle.textColor,
           fontSize: 'inherit'
         }} 
-        className="pl-4 py-2 my-4 italic opacity-90 rounded-r-lg rounded-bl-sm [&>p:last-child]:mb-0 [&>p:first-child]:mt-0 break-words before:content-none after:content-none [&_p]:before:content-none [&_p]:after:content-none" 
+        className="pl-4 py-2 my-4 italic opacity-90 rounded-r-lg rounded-bl-sm [&>p:last-child]:mb-0 [&>p:first-child]:mt-0 wrap-break-word before:content-none after:content-none [&_p]:before:content-none [&_p]:after:content-none" 
         {...props} 
       />
     ),
-    a: ({ node: _node, ...props }: any) => <a style={{color: cardStyle.accentColor}} className="underline decoration-auto underline-offset-2 break-all" {...props} />,
-    img: ({ node: _node, src, alt, ...props }: any) => {
+    a: (props) => <a style={{color: cardStyle.accentColor}} className="underline decoration-auto underline-offset-2 break-all" {...props} />,
+    img: (props: MarkdownComponentProps) => {
+      const { src, alt } = props as { src?: string, alt?: string };
       if (src === 'spacer' || src?.startsWith('spacer?')) {
         const spacerId = src.includes('id=') ? src.split('id=')[1] : null;
         return (
@@ -335,7 +344,7 @@ const Card = memo(({
       return (
         <img 
           src={cleanSrc} 
-          alt={alt} 
+          alt={alt as string || ''} 
           crossOrigin="anonymous"
           className="markdown-image"
           style={{ 
@@ -350,14 +359,14 @@ const Card = memo(({
         />
       );
     },
-    code: ({ node: _node, children, ...props }: any) => {
+    code: ({ children, ...props }) => {
       const text = String(children ?? '');
       return !text.includes('\n') ? (
         <code style={{ backgroundColor: cardStyle.codeBackgroundColor }} className="rounded px-1.5 py-0.5 text-[0.9em] font-mono border-none" {...props}>
           {children}
         </code>
       ) : (
-        <code style={{ backgroundColor: cardStyle.codeBackgroundColor, fontSize: '0.8em' }} className="block rounded-lg p-4 font-mono my-4 overflow-x-auto whitespace-pre-wrap break-words border-none" {...props}>
+        <code style={{ backgroundColor: cardStyle.codeBackgroundColor, fontSize: '0.8em' }} className="block rounded-lg p-4 font-mono my-4 overflow-x-auto whitespace-pre-wrap wrap-break-word border-none" {...props}>
           {children}
         </code>
       );
@@ -387,7 +396,7 @@ const Card = memo(({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.1 }}
-          className={`relative shadow-2xl flex flex-col shrink-0 group select-none ${isResetting && !draggingId ? 'transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)]' : ''}`}
+          className={`relative shadow-2xl flex flex-col shrink-0 group select-none ${isResetting && !draggingId ? 'transition-all duration-1000 ease-in-out' : ''}`}
           style={outerStyle}
           id={`card-${index}`}
           onMouseDown={(e) => {
@@ -401,7 +410,7 @@ const Card = memo(({
 
           <div 
             ref={contentRef}
-            className={`relative w-full h-full flex flex-col ${isResetting && !draggingId ? 'transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)]' : ''}`}
+            className={`relative w-full h-full flex flex-col ${isResetting && !draggingId ? 'transition-all duration-1000 ease-in-out' : ''}`}
             style={innerStyle}
             onMouseDown={(e) => {
               // Also allow deselection when clicking the inner container background
@@ -418,7 +427,7 @@ const Card = memo(({
             
             <div className="relative z-10 h-full flex flex-col pointer-events-none">
               <div 
-                className="prose prose-sm max-w-none flex-1 pointer-events-auto overflow-hidden wrap-break-word [&>*:first-child]:mt-0 prose-hr:hidden prose-blockquote:before:content-none prose-blockquote:after:content-none prose-blockquote:border-none [&_*]:border-none !prose-quotes-none"
+                className="prose prose-sm max-w-none flex-1 pointer-events-auto overflow-hidden wrap-break-word [&>*:first-child]:mt-0 prose-hr:hidden prose-blockquote:before:content-none prose-blockquote:after:content-none prose-blockquote:border-none **:border-none !prose-quotes-none"
                 onMouseDown={(e) => {
                   // If clicking on prose text area, deselect image
                   if (e.target === e.currentTarget || (e.target as HTMLElement).tagName === 'P' || (e.target as HTMLElement).tagName === 'DIV') {
@@ -432,9 +441,30 @@ const Card = memo(({
                 fontSize: `${cardStyle.fontSize}px`
               }}
               >
+                {/* Custom CSS Injection */}
+                {cardStyle.customCSS && (
+                  <style dangerouslySetInnerHTML={{ __html: cardStyle.customCSS }} />
+                )}
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm, remarkBreaks]}
-                  rehypePlugins={[rehypeRaw]}
+                  rehypePlugins={[
+                    rehypeRaw,
+                    [rehypeSanitize, {
+                      ...defaultSchema,
+                      tagNames: [
+                        ...(defaultSchema.tagNames || []),
+                        'u', 'center', 'strike', 'font', 'big', 'small'
+                      ],
+                      attributes: {
+                        ...(defaultSchema.attributes || {}),
+                        '*': [
+                          ...(defaultSchema.attributes?.['*'] || []),
+                          'className', 'style', 'id'
+                        ],
+                        'font': ['color', 'size', 'face']
+                      }
+                    }]
+                  ]}
                   components={components}
                 >
                   {processedContent}
@@ -537,7 +567,7 @@ const Card = memo(({
 
             {isSnapX && (
               <div 
-                className="absolute top-0 bottom-0 w-px bg-blue-500/50 z-[100] pointer-events-none"
+                className="absolute top-0 bottom-0 w-px bg-blue-500/50 z-100 pointer-events-none"
                 style={{ 
                   height: '100%', 
                   left: `${centerX}px`, 
@@ -651,7 +681,7 @@ const Card = memo(({
                       {selectedImageId === image.id && (
                         <>
                           {/* Image Toolbar */}
-                          <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-xl shadow-xl border border-black/5 dark:border-white/10 z-[60] pointer-events-auto">
+                          <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-xl shadow-xl border border-black/5 dark:border-white/10 z-60 pointer-events-auto export-ignore">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -742,32 +772,22 @@ export const Preview = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
   const { width, height } = getCardDimensions(cardStyle);
-  const [scale, setScale] = useState(1);
-  const [autoScale, setAutoScale] = useState(1);
-
-  useEffect(() => {
-    const calculateScale = () => {
-      const isDesktop = window.innerWidth >= 1024;
-      const editorSpace = (isDesktop && isEditorOpen) ? 448 : 40;
-      const sidebarSpace = (isDesktop && isSidebarOpen) ? 398 : 40;
-      const horizontalOccupied = editorSpace + sidebarSpace;
-      const verticalSpace = 180;
-      const availableWidth = Math.max(300, window.innerWidth - horizontalOccupied);
-      const availableHeight = Math.max(300, window.innerHeight - verticalSpace);
-      const wScale = availableWidth / width;
-      const hScale = availableHeight / height;
-      let s = cardStyle.autoHeight ? Math.min(wScale, 1) : Math.min(wScale, hScale, 1);
-      if (s < 0.2) s = 0.2;
-      setAutoScale(s);
-    };
-    calculateScale();
-    window.addEventListener('resize', calculateScale);
-    return () => window.removeEventListener('resize', calculateScale);
+  const autoScale = useMemo(() => {
+    const isDesktop = window.innerWidth >= 1024;
+    const editorSpace = (isDesktop && isEditorOpen) ? 448 : 40;
+    const sidebarSpace = (isDesktop && isSidebarOpen) ? 398 : 40;
+    const horizontalOccupied = editorSpace + sidebarSpace;
+    const verticalSpace = 180;
+    const availableWidth = Math.max(300, window.innerWidth - horizontalOccupied);
+    const availableHeight = Math.max(300, window.innerHeight - verticalSpace);
+    const wScale = availableWidth / width;
+    const hScale = availableHeight / height;
+    let s = cardStyle.autoHeight ? Math.min(wScale, 1) : Math.min(wScale, hScale, 1);
+    if (s < 0.2) s = 0.2;
+    return s;
   }, [width, height, isEditorOpen, isSidebarOpen, cardStyle.autoHeight]);
 
-  useEffect(() => {
-    setScale(previewZoom > 0 ? previewZoom : autoScale);
-  }, [previewZoom, autoScale]);
+  const scale = previewZoom > 0 ? previewZoom : autoScale;
 
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {

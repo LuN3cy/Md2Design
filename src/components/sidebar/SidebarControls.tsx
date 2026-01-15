@@ -5,6 +5,13 @@ import { PRESET_GRADIENTS } from '../../store';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Check } from 'lucide-react';
 
+export const ColorSectionWrapper = ({ children, label }: { children: React.ReactNode, label?: string }) => (
+  <div className="p-3 bg-black/5 dark:bg-white/5 rounded-lg border border-black/5 dark:border-white/5 space-y-3">
+     {label && <label className="text-xs font-medium opacity-70 block mb-2">{label}</label>}
+     {children}
+  </div>
+);
+
 export const CustomSelect = ({ 
   value, 
   options, 

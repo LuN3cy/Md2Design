@@ -98,14 +98,14 @@ export const PresetCard = ({
   };
 
   return (
-    <div className="relative shadow-2xl overflow-hidden flex flex-col flex-shrink-0" style={outerStyle}>
+    <div className="relative shadow-2xl overflow-hidden flex flex-col shrink-0" style={outerStyle}>
       {renderOuterBackground()}
 
       <div className="relative w-full h-full flex flex-col overflow-hidden" style={innerStyle}>
         {renderInnerBackground()}
 
         {style.template === 'default' && (
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-pink-400 to-orange-300 blur-3xl opacity-20 -z-0 pointer-events-none" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-br from-pink-400 to-orange-300 blur-3xl opacity-20 z-0 pointer-events-none" />
         )}
 
         <div className="relative z-10 h-full flex flex-col">
@@ -205,7 +205,7 @@ export const PresetCard = ({
                       {children}
                     </code>
                   ) : (
-                    <code style={{ backgroundColor: style.codeBackgroundColor, fontSize: '0.8em' }} className="block rounded-lg p-4 font-mono my-4 overflow-x-auto whitespace-pre-wrap break-words" {...props}>
+                    <code style={{ backgroundColor: style.codeBackgroundColor, fontSize: '0.8em' }} className="block rounded-lg p-4 font-mono my-4 overflow-x-auto whitespace-pre-wrap wrap-break-word" {...props}>
                       {children}
                     </code>
                   );
@@ -217,7 +217,7 @@ export const PresetCard = ({
           </div>
 
           <div
-            className="flex-shrink-0 w-full pt-2 flex items-center relative font-mono uppercase tracking-widest pointer-events-none text-[10px] h-8"
+            className="shrink-0 w-full pt-2 flex items-center relative font-mono uppercase tracking-widest pointer-events-none text-[10px] h-8"
             style={{ opacity: style.watermark?.opacity ?? 0.6 }}
           >
             <div className="absolute left-0 flex items-center gap-4">

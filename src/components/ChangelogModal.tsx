@@ -452,7 +452,9 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
     if (selectedVersion) {
       const versionParts = selectedVersion.split('.');
       const minorVersion = `${versionParts[0]}.${versionParts[1]}`;
-      setExpandedGroups(prev => ({ ...prev, [minorVersion]: true }));
+      setTimeout(() => {
+        setExpandedGroups(prev => ({ ...prev, [minorVersion]: true }));
+      }, 0);
     }
   }, [selectedVersion]);
 
@@ -655,7 +657,7 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
                             whileHover={{ x: 5 }}
                             className={`flex items-start gap-3 leading-relaxed group cursor-default py-2 px-3 rounded-xl transition-all ${
                               isThanks 
-                                ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/10 text-blue-700 dark:text-blue-300 shadow-sm' 
+                                ? 'bg-linear-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/10 text-blue-700 dark:text-blue-300 shadow-sm' 
                                 : 'text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'
                             }`}
                           >
@@ -973,7 +975,7 @@ const DemoBlankLine = () => {
                 remarkPlugins={[remarkGfm, remarkBreaks]} 
                 rehypePlugins={[rehypeRaw]}
                 components={{
-                  p: ({node, ...props}) => <p className="mb-4 last:mb-0" {...props} />
+                  p: ({...props}) => <p className="mb-4 last:mb-0" {...props} />
                 }}
               >
                 {text}
@@ -1345,7 +1347,7 @@ const DemoSupportFlow = () => {
                       (e.target as HTMLImageElement).src = `https://placehold.co/200x200/fee2e2/dc2626?text=${item.label}`;
                     }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end justify-center pb-2">
+                  <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent flex items-end justify-center pb-2">
                     <span className="text-white text-[10px] font-bold">{item.label}</span>
                   </div>
                 </button>

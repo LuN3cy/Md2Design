@@ -89,7 +89,7 @@ function App() {
           font-family: "${safeName}";
           src: url("${font.url}") format("${format}");
           font-weight: ${fontWeight};
-          font-style: normal italic;
+          font-style: normal;
           font-display: swap;
         }`;
       })

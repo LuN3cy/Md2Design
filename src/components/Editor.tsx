@@ -115,7 +115,7 @@ export const Editor = () => {
       return;
     }
 
-    const escapedMarker = marker.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const escapedMarker = marker.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
     let regex;
     if (marker === '**') {
       regex = new RegExp(`^\\*\\*(.*)\\*\\*$`, 's');
@@ -176,7 +176,7 @@ export const Editor = () => {
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     
-    let lineStart = markdown.lastIndexOf('\n', start - 1) + 1;
+    const lineStart = markdown.lastIndexOf('\n', start - 1) + 1;
     let lineEnd = markdown.indexOf('\n', end);
     if (lineEnd === -1) lineEnd = markdown.length;
     
@@ -261,7 +261,7 @@ export const Editor = () => {
     const end = textarea.selectionEnd;
     
     // Find the full block (lines)
-    let lineStart = markdown.lastIndexOf('\n', start - 1) + 1;
+    const lineStart = markdown.lastIndexOf('\n', start - 1) + 1;
     let lineEnd = markdown.indexOf('\n', end);
     if (lineEnd === -1) lineEnd = markdown.length;
     
@@ -468,7 +468,7 @@ export const Editor = () => {
               }}
             />
 
-            <div className="flex-shrink-0 border-b border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 p-2">
+            <div className="shrink-0 border-b border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 p-2">
                 <div className="flex items-center gap-1">
                   {/* Basic Styles */}
                   <div className="flex items-center bg-black/5 dark:bg-white/5 rounded-lg p-0.5">

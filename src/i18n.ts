@@ -54,6 +54,7 @@ const translations = {
     uploadImage: 'Upload Image',
     portrait: 'Portrait',
     landscape: 'Landscape',
+    long: 'Long',
     flexible: 'Flexible',
     flexibleHint: 'Manual pagination with content-based height',
     startColor: 'Start Color',
@@ -160,6 +161,11 @@ const translations = {
     autoPaginate: 'Auto Paginate',
     autoPaginatedToast: 'Auto Paginated',
     autoPaginatedMsg: 'Content too long, auto-split by height. Use "---" for manual split.',
+    cardWidth: 'Card Width',
+    margins: 'Margins',
+    vertical: 'Vertical',
+    aspectRatio: 'Aspect Ratio',
+    watermarkPlaceholder: 'Enter watermark text...',
   },
   zh: {
     title: 'Md2Design',
@@ -214,6 +220,7 @@ const translations = {
     uploadImage: '上传图片',
     portrait: '竖屏',
     landscape: '横屏',
+    long: '长图',
     flexible: '灵活',
     flexibleHint: '手动分页且高度自适应内容',
     startColor: '起始色',
@@ -320,6 +327,11 @@ const translations = {
     alipay: '支付宝',
     wechat: '微信支付',
     selectAmount: '选择金额',
+    cardWidth: '卡片宽度',
+    margins: '边距',
+    vertical: '垂直',
+    aspectRatio: '长宽比例',
+    watermarkPlaceholder: '输入水印文字...',
   }
 };
 

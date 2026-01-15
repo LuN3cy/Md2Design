@@ -2,16 +2,14 @@ import { useState, useEffect } from 'react';
 import { useStore } from '../store';
 import { useTranslation } from '../i18n';
 import { Moon, Sun, Download, Languages, Info, X, ChevronDown, Check, Github, Sparkles, MessageSquare, Check as CheckIcon, RotateCcw, ThumbsUp } from 'lucide-react';
-import { toPng, toJpeg } from 'html-to-image';
 import { motion, AnimatePresence } from 'framer-motion';
-import JSZip from 'jszip';
-import { saveAs } from 'file-saver';
 import { ChangelogModal } from './ChangelogModal';
+import { useExport } from '../hooks/useExport';
 
 import logoSvg from '../assets/logo.svg';
 
 export const TopBar = () => {
-  const { theme, toggleTheme, toggleLanguage, isScrolled, previewZoom, setPreviewZoom, isExporting, setIsExporting } = useStore();
+  const { theme, toggleTheme, toggleLanguage, isScrolled, previewZoom, setPreviewZoom, setIsExporting: setGlobalIsExporting } = useStore();
   const t = useTranslation();
   const [showContact, setShowContact] = useState(false);
   const [showExport, setShowExport] = useState(false);
@@ -29,14 +27,13 @@ export const TopBar = () => {
     }, 1500);
 
     // Support Tip
-    let supportTimer: NodeJS.Timeout;
-    supportTimer = setTimeout(() => {
+    const supportTimer = setTimeout(() => {
       setShowSupportTip(true);
     }, 1000);
 
     return () => {
       clearTimeout(onboardingTimer);
-      if (supportTimer) clearTimeout(supportTimer);
+      clearTimeout(supportTimer);
     };
   }, []);
 
@@ -105,7 +102,7 @@ export const TopBar = () => {
   };
 
   // Export Settings
-  const [format, setFormat] = useState<'png' | 'jpg'>('png');
+  const [format, setFormat] = useState<'png' | 'jpeg'>('png');
   const [scale, setScale] = useState<1 | 2 | 3 | 4>(2);
   const [exportMode, setExportMode] = useState<'single' | 'multiple'>('multiple');
   const [exportTarget, setExportTarget] = useState<'folder' | 'zip'>('zip');
@@ -170,215 +167,25 @@ export const TopBar = () => {
     return parts.filter(Boolean).join('_');
   };
 
-  const [progress, setProgress] = useState(0);  const [showSuccess, setShowSuccess] = useState(false);
-  const [previewSize, setPreviewSize] = useState<{ single: string, total: string }>({ single: '-', total: '-' });
+  const { 
+    isExporting, 
+    progress, 
+    showSuccess, 
+    previewSize, 
+    handleExport 
+  } = useExport({
+    format,
+    scale,
+    exportMode,
+    exportTarget,
+    folderName
+  });
 
-  // Calculate size estimation
-  useEffect(() => {
-    if (!showExport) return;
-    
-    const calculateSize = async () => {
-      // Find first card for estimation
-      const firstCard = document.querySelector('[id^="card-"]') as HTMLElement;
-      if (!firstCard) return;
-
-      try {
-        setPreviewSize({ single: t.calculating, total: t.calculating });
-        
-        // Generate sample blob
-        const options = { 
-            pixelRatio: scale,
-            filter: (node: HTMLElement) => !node.classList?.contains('export-ignore')
-        };
-        
-        let blob;
-        if (format === 'png') {
-           const dataUrl = await toPng(firstCard, options);
-           blob = await (await fetch(dataUrl)).blob();
-        } else {
-           const dataUrl = await toJpeg(firstCard, { ...options, quality: 0.9 });
-           blob = await (await fetch(dataUrl)).blob();
-        }
-
-        const singleSize = blob.size / 1024 / 1024; // MB
-        const cardCount = document.querySelectorAll('[id^="card-"]').length;
-        const totalSize = singleSize * cardCount;
-
-        setPreviewSize({ 
-          single: `${singleSize.toFixed(2)} MB`, 
-          total: `${totalSize.toFixed(2)} MB`
-        });
-      } catch (e) {
-        console.error(e);
-        setPreviewSize({ single: 'Error', total: 'Error' });
-      }
-    };
-
-    const timer = setTimeout(calculateSize, 500); // Debounce
-    return () => clearTimeout(timer);
-  }, [showExport, format, scale, t.calculating]);
-
-  const handleExport = async () => {
-    setIsExporting(true);
-    setProgress(0);
-    try {
-        const cards = Array.from(document.querySelectorAll('[id^="card-"]')) as HTMLElement[];
-        const options = { 
-            pixelRatio: scale,
-            filter: (node: HTMLElement) => !node.classList?.contains('export-ignore')
-        };
-        
-        let completed = 0;
-        const total = cards.length;
-        const updateProgress = () => {
-            completed++;
-            setProgress(Math.round((completed / total) * 100));
-        };
-
-        // Helper to generate blob
-        const generateBlob = async (card: HTMLElement) => {
-            // Pre-process images to Base64 to avoid html-to-image caching/cloning bugs
-            // This is critical for fixing the "all images look like the first one" bug.
-            const images = Array.from(card.querySelectorAll('img'));
-            const originalSrcs = new Map<HTMLImageElement, string>();
-
-            try {
-                await Promise.all(images.map(async (img) => {
-                    const src = img.src;
-                    if (src.startsWith('data:')) return; // Already base64
-
-                    try {
-                        // Keep track to restore later
-                        originalSrcs.set(img, src);
-                        
-                        // Fetch and convert
-                        const response = await fetch(src);
-                        const blob = await response.blob();
-                        const base64 = await new Promise<string>((resolve) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => resolve(reader.result as string);
-                            reader.readAsDataURL(blob);
-                        });
-                        
-                        img.src = base64;
-                    } catch (e) {
-                        console.warn('Failed to inline image:', src, e);
-                    }
-                }));
-
-                let dataUrl;
-                const currentOptions = { 
-                    ...options, 
-                    useCORS: true,
-                    skipAutoScale: true
-                };
-
-                if (format === 'png') {
-                    dataUrl = await toPng(card, currentOptions);
-                } else {
-                    dataUrl = await toJpeg(card, { ...currentOptions, quality: 0.9 });
-                }
-                const res = await fetch(dataUrl);
-                return await res.blob();
-            } finally {
-                // Restore original src to not break the DOM
-                originalSrcs.forEach((src, img) => {
-                    img.src = src;
-                });
-            }
-        };
-
-        if (exportMode === 'multiple') {
-            const runZipExport = async () => {
-                const zip = new JSZip();
-                const chunkSize = 3;
-                for (let i = 0; i < cards.length; i += chunkSize) {
-                    const chunk = cards.slice(i, i + chunkSize);
-                    await Promise.all(chunk.map(async (card, idx) => {
-                        const globalIdx = i + idx;
-                        const blob = await generateBlob(card);
-                        zip.file(`${generateFileName(globalIdx, cards.length)}.${format}`, blob);
-                        updateProgress();
-                    }));
-                }
-                const content = await zip.generateAsync({ type: "blob" });
-                saveAs(content, `${folderName || 'cards-export'}.zip`);
-            };
-
-            // Folder Export (File System Access API)
-            if (exportTarget === 'folder' && 'showDirectoryPicker' in window) {
-                try {
-                    // @ts-expect-error - File System Access API
-                    const dirHandle = await window.showDirectoryPicker();
-                    let targetHandle = dirHandle;
-                    if (folderName) {
-
-                        targetHandle = await dirHandle.getDirectoryHandle(folderName, { create: true });
-                    }
-
-                    // Process with concurrency limit
-                    const CONCURRENCY = 3;
-                    const tasks = cards.map((card, i) => async () => {
-                        const blob = await generateBlob(card);
-                        const fileName = `${generateFileName(i, cards.length)}.${format}`;
-
-                        const fileHandle = await targetHandle.getFileHandle(fileName, { create: true });
-
-                        const writable = await fileHandle.createWritable();
-                        await writable.write(blob);
-                        await writable.close();
-                        updateProgress();
-                    });
-
-                    // Run tasks
-                    const running: Promise<void>[] = [];
-                    for (const task of tasks) {
-                        const p = task().then(() => {
-                            running.splice(running.indexOf(p), 1);
-                        });
-                        running.push(p);
-                        if (running.length >= CONCURRENCY) {
-                            await Promise.race(running);
-                        }
-                    }
-                    await Promise.all(running);
-                } catch (err) {
-                    if ((err as Error).name === 'AbortError') {
-                        setIsExporting(false);
-                        return;
-                    }
-                    
-                    console.error('Directory picker failed, falling back to ZIP', err);
-                    // Automatic fallback to ZIP on security error or other issues
-                    await runZipExport();
-                }
-            } else {
-                // Default to ZIP for 'zip' target or unsupported browsers
-                await runZipExport();
-            }
-        } else {
-            // Direct Download (Single Images)
-            // Process sequentially with small delay to prevent browser blocking
-            for (let i = 0; i < cards.length; i++) {
-                const card = cards[i];
-                const blob = await generateBlob(card);
-                saveAs(blob, `${generateFileName(i, cards.length)}.${format}`);
-                updateProgress();
-                // Small delay to prevent browser from blocking multiple downloads
-                await new Promise(resolve => setTimeout(resolve, 200));
-            }
-        }
-
-        // Show success
-        setShowExport(false);
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 3000);
-
-    } catch (err) {
-        console.error('Export failed', err);
-    } finally {
-        setIsExporting(false);
-    }
+  const onExportClick = async () => {
+    setGlobalIsExporting(true);
+    await handleExport();
+    setGlobalIsExporting(false);
+    setShowExport(false);
   };
 
   const contactLinks = [
@@ -617,7 +424,7 @@ export const TopBar = () => {
                     stiffness: 260,
                     damping: 20
                   }}
-                  className="absolute top-full right-0 whitespace-nowrap z-[100]"
+                  className="absolute top-full right-0 whitespace-nowrap z-100"
                 >
                   {/* Arrow Tip */}
                   <div className="absolute -top-1 right-3.5 w-2 h-2 bg-orange-400/85 dark:bg-orange-500/80 rotate-45 border-l border-t border-white/20" />
@@ -717,15 +524,15 @@ export const TopBar = () => {
                      <div>
                        <span id="format-label" className="text-xs font-medium text-slate-500 dark:text-white/50 mb-2 block uppercase tracking-wider">{t.format}</span>
                        <div role="group" aria-labelledby="format-label" className="flex p-1 bg-black/5 dark:bg-white/5 rounded-lg border border-black/5 dark:border-white/5">
-                         {['png', 'jpg'].map((f) => (
+                         {['png', 'jpeg'].map((f) => (
                            <button
                              key={f}
-                             onClick={() => setFormat(f as 'png' | 'jpg')}
+                             onClick={() => setFormat(f as 'png' | 'jpeg')}
                              className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all uppercase ${
                                format === f ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
                              }`}
                            >
-                             {f}
+                             {f === 'jpeg' ? 'JPG' : f}
                            </button>
                          ))}
                        </div>
@@ -1086,7 +893,7 @@ export const TopBar = () => {
                      )}
                      
                      <button
-                       onClick={handleExport}
+                       onClick={onExportClick}
                        disabled={isExporting}
                        className="w-full py-3.5 bg-linear-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-xl text-sm font-bold shadow-xl shadow-blue-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transform active:scale-[0.98]"
                      >
@@ -1199,7 +1006,7 @@ export const TopBar = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
             onClick={() => setShowSupport(false)}
           >
             <motion.div
@@ -1238,7 +1045,7 @@ export const TopBar = () => {
                         (e.target as HTMLImageElement).src = `https://placehold.co/400x400/fee2e2/dc2626?text=${item.label}`;
                       }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-4">
+                    <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-4">
                       <span className="text-white font-bold">{item.label}</span>
                     </div>
                   </button>
@@ -1256,7 +1063,7 @@ export const TopBar = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+            className="fixed inset-0 z-70 flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
             onClick={() => setSelectedSupportAmount(null)}
           >
             <motion.div

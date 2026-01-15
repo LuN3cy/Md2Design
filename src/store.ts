@@ -197,6 +197,22 @@ interface AppState {
 
   isExporting: boolean;
   setIsExporting: (isExporting: boolean) => void;
+
+  // Naming rules for export
+  namingMode: 'system' | 'custom';
+  setNamingMode: (mode: 'system' | 'custom') => void;
+  namingParts: ('prefix' | 'date' | 'custom' | 'number')[];
+  setNamingParts: (parts: ('prefix' | 'date' | 'custom' | 'number')[]) => void;
+  namingConfigs: {
+    prefix: string;
+    custom: string;
+    includeTime: boolean;
+    dateFormat: 'dateFormatFull' | 'dateFormatShort' | 'dateFormatMDY' | 'dateFormatDMY' | 'dateFormatYMD';
+    numberType: 'arabic' | 'chinese';
+    numberOrder: 'asc' | 'desc';
+    zeroStart: boolean;
+  };
+  setNamingConfigs: (configs: Partial<AppState['namingConfigs']>) => void;
 }
 
 export const PRESET_GRADIENTS = [
@@ -561,14 +577,31 @@ export const useStore = create<AppState>()(
 
   isExporting: false,
   setIsExporting: (isExporting) => set({ isExporting }),
-    }),
+
+  namingMode: 'system',
+  setNamingMode: (namingMode) => set({ namingMode }),
+  namingParts: ['prefix', 'date', 'custom', 'number'],
+  setNamingParts: (namingParts) => set({ namingParts }),
+  namingConfigs: {
+    prefix: 'Md2Design',
+    custom: 'MyCard',
+    includeTime: true,
+    dateFormat: 'dateFormatFull',
+    numberType: 'arabic',
+    numberOrder: 'asc',
+    zeroStart: false,
+  },
+  setNamingConfigs: (configs) => set((state) => ({
+    namingConfigs: { ...state.namingConfigs, ...configs }
+  })),
+}),
     {
       name: 'md2card-storage',
       storage: createJSONStorage(() => localStorage),
       version: 6,
-      migrate: (persistedState: any, version: number) => {
-        if (!persistedState) return persistedState;
-        const state = persistedState as any;
+      migrate: (persistedState: unknown, version: number) => {
+        if (!persistedState) return persistedState as AppState;
+        const state = persistedState as AppState;
 
         // Ensure layoutMode exists if cardStyle exists (robustness check)
         if (state.cardStyle && !state.cardStyle.layoutMode) {
@@ -631,8 +664,9 @@ export const useStore = create<AppState>()(
         if (version <= 4) {
           // Migration for v4 to v5: Add resizeMode to cardImages
           if (state.cardImages) {
-            Object.keys(state.cardImages).forEach(cardIndex => {
-              state.cardImages[cardIndex] = state.cardImages[cardIndex].map((img: any) => ({
+            Object.keys(state.cardImages).forEach(key => {
+              const cardIndex = parseInt(key, 10);
+              state.cardImages[cardIndex] = state.cardImages[cardIndex].map((img: CardImage) => ({
                 ...img,
                 resizeMode: img.resizeMode ?? 'cover'
               }));
@@ -651,6 +685,20 @@ export const useStore = create<AppState>()(
             state.cardStyle.layoutMode = layoutMode;
           }
         }
+        if (version <= 6) {
+          // Migration for v6 to v7: Add naming rules
+          state.namingMode = state.namingMode ?? 'system';
+          state.namingParts = state.namingParts ?? ['prefix', 'date', 'custom', 'number'];
+          state.namingConfigs = state.namingConfigs ?? {
+            prefix: 'Md2Design',
+            custom: 'MyCard',
+            includeTime: true,
+            dateFormat: 'dateFormatFull',
+            numberType: 'arabic',
+            numberOrder: 'asc',
+            zeroStart: false,
+          };
+        }
         return state;
       },
       partialize: (state) => ({
@@ -663,6 +711,9 @@ export const useStore = create<AppState>()(
         presets: state.presets,
         isEditorOpen: state.isEditorOpen,
         isSidebarOpen: state.isSidebarOpen,
+        namingMode: state.namingMode,
+        namingParts: state.namingParts,
+        namingConfigs: state.namingConfigs,
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
