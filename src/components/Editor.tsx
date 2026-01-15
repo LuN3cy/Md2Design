@@ -78,6 +78,7 @@ export const Editor = () => {
     if (!textarea) return;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
+    const selected = markdown.substring(start, end);
     
     // Support for <u> tags
     if (marker === '<u>') {
