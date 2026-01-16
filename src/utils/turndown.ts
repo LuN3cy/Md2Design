@@ -1,5 +1,5 @@
 import TurndownService from 'turndown';
-// @ts-ignore
+// @ts-expect-error turndown-plugin-gfm has no type definitions
 import { gfm } from 'turndown-plugin-gfm';
 
 const turndownService = new TurndownService({

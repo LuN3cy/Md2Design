@@ -1,9 +1,16 @@
-import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { HexColorPicker } from 'react-colorful';
 import { PRESET_GRADIENTS } from '../../store';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Check } from 'lucide-react';
+
+export const ColorSectionWrapper = ({ children, label }: { children: React.ReactNode, label?: string }) => (
+  <div className="p-3 bg-black/5 dark:bg-white/5 rounded-lg border border-black/5 dark:border-white/5 space-y-3">
+     {label && <span className="text-xs font-medium opacity-70 block mb-2">{label}</span>}
+     {children}
+  </div>
+);
 
 export const CustomSelect = ({ 
   value, 
@@ -74,7 +81,7 @@ export const CustomSelect = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -10 }}
             transition={{ duration: 0.1 }}
-            className="absolute left-0 right-0 mt-1 bg-white dark:bg-[#2a2a2a] border border-black/10 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden py-1.5 backdrop-blur-xl z-[100]"
+            className="absolute left-0 right-0 mt-1 bg-white dark:bg-[#2a2a2a] border border-black/10 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden py-1.5 backdrop-blur-xl z-100"
             style={{ 
               maxHeight: '240px'
             }}
@@ -171,6 +178,7 @@ export const DraggableNumberInput = ({
   icon: React.ReactNode,
   label?: string
 }) => {
+  const inputId = useId();
   const [isDragging, setIsDragging] = useState(false);
   const hasDragged = useRef(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -287,6 +295,9 @@ export const DraggableNumberInput = ({
         <div className="flex-1 relative flex items-center justify-end">
           {isEditing ? (
             <input
+              id={inputId}
+              name={label || 'number-input'}
+              aria-label={label || 'Number Input'}
               ref={inputRef}
               type="text"
               value={inputValue}
@@ -311,6 +322,7 @@ export const DraggableNumberInput = ({
 };
 
 export const ColorPicker = ({ color, onChange, label }: { color: string, onChange: (color: string) => void, label?: string }) => {
+  const inputId = useId();
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -341,6 +353,7 @@ export const ColorPicker = ({ color, onChange, label }: { color: string, onChang
 
   useLayoutEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line
       updatePosition();
     }
   }, [isOpen]);
@@ -379,6 +392,9 @@ export const ColorPicker = ({ color, onChange, label }: { color: string, onChang
         <div className="flex items-center gap-2 w-full">
           <div className="relative flex-1">
             <input 
+              id={inputId}
+              name={label || 'color-input'}
+              aria-label={label || 'Color Input'}
               type="text" 
               value={color.toUpperCase()} 
               onChange={(e) => onChange(e.target.value)}
@@ -388,7 +404,7 @@ export const ColorPicker = ({ color, onChange, label }: { color: string, onChang
           <button 
             ref={buttonRef}
             onClick={() => setIsOpen(!isOpen)}
-            className="w-8 h-8 rounded-full border border-black/20 dark:border-white/20 shadow-sm relative overflow-hidden transition-transform active:scale-95 flex-shrink-0"
+            className="w-8 h-8 rounded-full border border-black/20 dark:border-white/20 shadow-sm relative overflow-hidden transition-transform active:scale-95 shrink-0"
             style={{ backgroundColor: color }}
           />
         </div>
@@ -397,7 +413,7 @@ export const ColorPicker = ({ color, onChange, label }: { color: string, onChang
       {isOpen && createPortal(
         <div 
           ref={popoverRef} 
-          className="fixed z-[9999] p-3 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-black/10 dark:border-white/10"
+          className="fixed z-9999 p-3 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-black/10 dark:border-white/10"
           style={{ 
             top: coords.top, 
             left: coords.left,

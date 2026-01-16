@@ -104,7 +104,7 @@ export const PresetsManager = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[1000] bg-black/35"
+              className="fixed inset-0 z-1000 bg-black/35"
               onClick={() => setPreviewPreset(null)}
               style={{
                 backdropFilter: 'blur(12px)',

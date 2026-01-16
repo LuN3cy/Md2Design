@@ -194,6 +194,25 @@ interface AppState {
   setIsEditorOpen: (isOpen: boolean) => void;
   isSidebarOpen: boolean;
   setIsSidebarOpen: (isOpen: boolean) => void;
+
+  isExporting: boolean;
+  setIsExporting: (isExporting: boolean) => void;
+
+  // Naming rules for export
+  namingMode: 'system' | 'custom';
+  setNamingMode: (mode: 'system' | 'custom') => void;
+  namingParts: ('prefix' | 'date' | 'custom' | 'number')[];
+  setNamingParts: (parts: ('prefix' | 'date' | 'custom' | 'number')[]) => void;
+  namingConfigs: {
+    prefix: string;
+    custom: string;
+    includeTime: boolean;
+    dateFormat: 'dateFormatFull' | 'dateFormatShort' | 'dateFormatMDY' | 'dateFormatDMY' | 'dateFormatYMD';
+    numberType: 'arabic' | 'chinese';
+    numberOrder: 'asc' | 'desc';
+    zeroStart: boolean;
+  };
+  setNamingConfigs: (configs: Partial<AppState['namingConfigs']>) => void;
 }
 
 export const PRESET_GRADIENTS = [
@@ -346,13 +365,15 @@ export const useStore = create<AppState>()(
   markdown: DEFAULT_MARKDOWN_ZH,
   setMarkdown: (markdown) => set({ markdown }),
 
-  theme: 'dark',
+  theme: 'light',
   toggleTheme: () => set((state) => {
     const newTheme = state.theme === 'light' ? 'dark' : 'light';
-    if (newTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    if (typeof document !== 'undefined') {
+      if (newTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
     }
     return { theme: newTheme };
   }),
@@ -466,7 +487,7 @@ export const useStore = create<AppState>()(
   previousCardStyle: null,
   updateCardStyle: (style) => set((state) => {
     // If updating shadow config, recompute shadow string
-    let newStyle = { ...style };
+    const newStyle = { ...style };
     
     if (style.shadowConfig || style.shadowEnabled !== undefined) {
       const config = { ...state.cardStyle.shadowConfig, ...style.shadowConfig };
@@ -477,17 +498,31 @@ export const useStore = create<AppState>()(
       } else {
         const { x, y, blur, spread, color, opacity } = config;
         
-        // Convert hex color to rgb for opacity handling if needed, 
-        // but easier to just use hex and assume browser handles or user provides rgba.
-        // Actually user provides hex color usually. We need to apply opacity.
-        // Let's assume color is HEX.
-  const [r, g, b] = color.startsWith('#') 
-    ? (color.length === 4 
-        ? [parseInt(color[1] + color[1], 16), parseInt(color[2] + color[2], 16), parseInt(color[3] + color[3], 16)]
-        : [parseInt(color.substring(1, 3), 16), parseInt(color.substring(3, 5), 16), parseInt(color.substring(5, 7), 16)])
-    : [0, 0, 0];
-  
-  newStyle.shadow = `${x}px ${y}px ${blur}px ${spread}px rgba(${r}, ${g}, ${b}, ${opacity})`;
+        // Parse color - support hex, rgb(), and rgba() formats
+        let r = 0, g = 0, b = 0;
+        
+        if (color.startsWith('#')) {
+          // Hex color
+          if (color.length === 4) {
+            r = parseInt(color[1] + color[1], 16);
+            g = parseInt(color[2] + color[2], 16);
+            b = parseInt(color[3] + color[3], 16);
+          } else {
+            r = parseInt(color.substring(1, 3), 16);
+            g = parseInt(color.substring(3, 5), 16);
+            b = parseInt(color.substring(5, 7), 16);
+          }
+        } else if (color.startsWith('rgb')) {
+          // rgb() or rgba() - extract RGB values, ignore alpha (use our opacity instead)
+          const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+          if (match) {
+            r = parseInt(match[1], 10);
+            g = parseInt(match[2], 10);
+            b = parseInt(match[3], 10);
+          }
+        }
+        
+        newStyle.shadow = `${x}px ${y}px ${blur}px ${spread}px rgba(${r}, ${g}, ${b}, ${opacity})`;
       }
     }
 
@@ -553,110 +588,181 @@ export const useStore = create<AppState>()(
   setIsEditorOpen: (isOpen) => set({ isEditorOpen: isOpen }),
   isSidebarOpen: true,
   setIsSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
-    }),
+
+  isExporting: false,
+  setIsExporting: (isExporting) => set({ isExporting }),
+
+  namingMode: 'system',
+  setNamingMode: (namingMode) => set({ namingMode }),
+  namingParts: ['prefix', 'date', 'custom', 'number'],
+  setNamingParts: (namingParts) => set({ namingParts }),
+  namingConfigs: {
+    prefix: 'Md2Design',
+    custom: 'MyCard',
+    includeTime: true,
+    dateFormat: 'dateFormatFull',
+    numberType: 'arabic',
+    numberOrder: 'asc',
+    zeroStart: false,
+  },
+  setNamingConfigs: (configs) => set((state) => ({
+    namingConfigs: { ...state.namingConfigs, ...configs }
+  })),
+}),
     {
       name: 'md2card-storage',
       storage: createJSONStorage(() => localStorage),
       version: 6,
-      migrate: (persistedState: any, version: number) => {
-        if (!persistedState) return persistedState;
+      migrate: (persistedState: unknown, version: number) => {
+        if (!persistedState) return persistedState as AppState;
+        const state = persistedState as AppState;
 
         // Ensure layoutMode exists if cardStyle exists (robustness check)
-        if (persistedState.cardStyle && !persistedState.cardStyle.layoutMode) {
+        if (state.cardStyle && !state.cardStyle.layoutMode) {
           let layoutMode: 'portrait' | 'landscape' | 'long' | 'flexible' = 'portrait';
-          if (persistedState.cardStyle.autoHeight) {
+          if (state.cardStyle.autoHeight) {
             layoutMode = 'long';
-          } else if (persistedState.cardStyle.orientation === 'landscape') {
+          } else if (state.cardStyle.orientation === 'landscape') {
             layoutMode = 'landscape';
           }
-          persistedState.cardStyle.layoutMode = layoutMode;
+          state.cardStyle.layoutMode = layoutMode;
         }
 
-        if (version <= 5) {
-          // Migration for v5 to v6: Add layoutMode
-          if (persistedState.cardStyle) {
-            let layoutMode: 'portrait' | 'landscape' | 'long' | 'flexible' = 'portrait';
-            if (persistedState.cardStyle.autoHeight) {
-              layoutMode = 'long';
-            } else if (persistedState.cardStyle.orientation === 'landscape') {
-              layoutMode = 'landscape';
-            }
-            persistedState.cardStyle.layoutMode = layoutMode;
+        if (version === 0) {
+          // Migration for v0 to v1: Add headingScale and contentPadding
+          if (state.cardStyle) {
+            state.cardStyle = {
+              ...state.cardStyle,
+              headingScale: state.cardStyle.headingScale ?? 1.0,
+              contentPadding: state.cardStyle.contentPadding ?? 24,
+            };
           }
         }
-
+        if (version <= 1) {
+          // Migration for v1 to v2: Add autoHeight and independent heading sizes
+          if (state.cardStyle) {
+            state.cardStyle = {
+              ...state.cardStyle,
+              autoHeight: state.cardStyle.autoHeight ?? false,
+              h1FontSize: state.cardStyle.h1FontSize ?? 32,
+              h2FontSize: state.cardStyle.h2FontSize ?? 24,
+              h3FontSize: state.cardStyle.h3FontSize ?? 20,
+            };
+          }
+        }
+        if (version <= 2) {
+          // Migration for v2 to v3: Add cardPadding and cardPaddingSync
+          if (state.cardStyle) {
+            state.cardStyle = {
+              ...state.cardStyle,
+              cardPadding: state.cardStyle.cardPadding ?? {
+                top: state.cardStyle.contentPadding ?? 32,
+                right: state.cardStyle.contentPadding ?? 32,
+                bottom: state.cardStyle.contentPadding ?? 32,
+                left: state.cardStyle.contentPadding ?? 32
+              },
+              cardPaddingSync: state.cardStyle.cardPaddingSync ?? true,
+            };
+          }
+        }
+        if (version <= 3) {
+          // Migration for v3 to v4: Add watermark and pageNumber
+          if (state.cardStyle) {
+            state.cardStyle = {
+              ...state.cardStyle,
+              watermark: state.cardStyle.watermark ?? INITIAL_CARD_STYLE.watermark,
+              pageNumber: state.cardStyle.pageNumber ?? INITIAL_CARD_STYLE.pageNumber,
+            };
+          }
+        }
         if (version <= 4) {
           // Migration for v4 to v5: Add resizeMode to cardImages
-          if (persistedState.cardImages) {
-            Object.keys(persistedState.cardImages).forEach(cardIndex => {
-              persistedState.cardImages[cardIndex] = persistedState.cardImages[cardIndex].map((img: any) => ({
+          if (state.cardImages) {
+            Object.keys(state.cardImages).forEach(key => {
+              const cardIndex = parseInt(key, 10);
+              state.cardImages[cardIndex] = state.cardImages[cardIndex].map((img: CardImage) => ({
                 ...img,
                 resizeMode: img.resizeMode ?? 'cover'
               }));
             });
           }
         }
-
-        if (version === 0) {
-          // Migration for v0 to v1: Add headingScale and contentPadding
-          if (persistedState.cardStyle) {
-            persistedState.cardStyle = {
-              ...persistedState.cardStyle,
-              headingScale: persistedState.cardStyle.headingScale ?? 1.0,
-              contentPadding: persistedState.cardStyle.contentPadding ?? 24,
-            };
+        if (version <= 5) {
+          // Migration for v5 to v6: Add layoutMode
+          if (state.cardStyle) {
+            let layoutMode: 'portrait' | 'landscape' | 'long' | 'flexible' = 'portrait';
+            if (state.cardStyle.autoHeight) {
+              layoutMode = 'long';
+            } else if (state.cardStyle.orientation === 'landscape') {
+              layoutMode = 'landscape';
+            }
+            state.cardStyle.layoutMode = layoutMode;
           }
         }
-        if (version <= 1) {
-          // Migration for v1 to v2: Add autoHeight and independent heading sizes
-          if (persistedState.cardStyle) {
-            persistedState.cardStyle = {
-              ...persistedState.cardStyle,
-              autoHeight: persistedState.cardStyle.autoHeight ?? false,
-              h1FontSize: persistedState.cardStyle.h1FontSize ?? 32,
-              h2FontSize: persistedState.cardStyle.h2FontSize ?? 24,
-              h3FontSize: persistedState.cardStyle.h3FontSize ?? 20,
-            };
-          }
+        if (version <= 6) {
+          // Migration for v6 to v7: Add naming rules
+          state.namingMode = state.namingMode ?? 'system';
+          state.namingParts = state.namingParts ?? ['prefix', 'date', 'custom', 'number'];
+          state.namingConfigs = state.namingConfigs ?? {
+            prefix: 'Md2Design',
+            custom: 'MyCard',
+            includeTime: true,
+            dateFormat: 'dateFormatFull',
+            numberType: 'arabic',
+            numberOrder: 'asc',
+            zeroStart: false,
+          };
         }
-        if (version <= 2) {
-          // Migration for v2 to v3: Add cardPadding and cardPaddingSync
-          if (persistedState.cardStyle) {
-            persistedState.cardStyle = {
-              ...persistedState.cardStyle,
-              cardPadding: persistedState.cardStyle.cardPadding ?? {
-                top: persistedState.cardStyle.contentPadding ?? 32,
-                right: persistedState.cardStyle.contentPadding ?? 32,
-                bottom: persistedState.cardStyle.contentPadding ?? 32,
-                left: persistedState.cardStyle.contentPadding ?? 32
-              },
-              cardPaddingSync: persistedState.cardStyle.cardPaddingSync ?? true,
-            };
-          }
-        }
-        if (version <= 3) {
-          // Migration for v3 to v4: Add watermark and pageNumber
-          if (persistedState.cardStyle) {
-            persistedState.cardStyle = {
-              ...persistedState.cardStyle,
-              watermark: persistedState.cardStyle.watermark ?? INITIAL_CARD_STYLE.watermark,
-              pageNumber: persistedState.cardStyle.pageNumber ?? INITIAL_CARD_STYLE.pageNumber,
-            };
-          }
-        }
-        return persistedState;
+        return state;
       },
-      partialize: (state) => ({
-        theme: state.theme,
-        language: state.language,
-        markdown: state.markdown,
-        cardStyle: state.cardStyle,
-        cardImages: state.cardImages,
-        activeCardIndex: state.activeCardIndex,
-        presets: state.presets,
-        isEditorOpen: state.isEditorOpen,
-        isSidebarOpen: state.isSidebarOpen,
-      }),
+      partialize: (state) => {
+        // Deep clone cardStyle to avoid mutating original state
+        const cleanCardStyle = JSON.parse(JSON.stringify(state.cardStyle));
+        // Remove base64 image data to prevent localStorage quota overflow
+        if (cleanCardStyle.backgroundImage && cleanCardStyle.backgroundImage.startsWith('data:')) {
+          cleanCardStyle.backgroundImage = '';
+        }
+        if (cleanCardStyle.cardBackgroundImage && cleanCardStyle.cardBackgroundImage.startsWith('data:')) {
+          cleanCardStyle.cardBackgroundImage = '';
+        }
+        // Clean customFonts with inline base64 URLs
+        if (cleanCardStyle.customFonts) {
+          cleanCardStyle.customFonts = cleanCardStyle.customFonts.filter(
+            (f: { url: string }) => !f.url.startsWith('data:')
+          );
+        }
+
+        // Clean presets containing base64 data
+        const cleanPresets = state.presets.map(preset => {
+          const cleanStyle = JSON.parse(JSON.stringify(preset.style));
+          if (cleanStyle.backgroundImage?.startsWith('data:')) cleanStyle.backgroundImage = '';
+          if (cleanStyle.cardBackgroundImage?.startsWith('data:')) cleanStyle.cardBackgroundImage = '';
+          
+          // Also clean customFonts in presets
+          if (cleanStyle.customFonts) {
+            cleanStyle.customFonts = cleanStyle.customFonts.filter(
+              (f: { url: string }) => !f.url.startsWith('data:')
+            );
+          }
+          
+          return { ...preset, style: cleanStyle };
+        });
+
+        return {
+          theme: state.theme,
+          language: state.language,
+          markdown: state.markdown,
+          cardStyle: cleanCardStyle,
+          // cardImages removed - too large for localStorage
+          activeCardIndex: state.activeCardIndex,
+          presets: cleanPresets,
+          isEditorOpen: state.isEditorOpen,
+          isSidebarOpen: state.isSidebarOpen,
+          namingMode: state.namingMode,
+          namingParts: state.namingParts,
+          namingConfigs: state.namingConfigs,
+        };
+      },
       onRehydrateStorage: () => (state) => {
         if (!state) return;
         if (state.theme === 'dark') {
@@ -668,10 +774,10 @@ export const useStore = create<AppState>()(
     }
     ),
     {
-      // Configure Zundo: only track changes to markdown and cardImages
+      // Configure Zundo: only track markdown changes (cardImages removed due to memory impact)
       partialize: (state) => ({ 
-        markdown: state.markdown,
-        cardImages: state.cardImages 
+        markdown: state.markdown
+        // cardImages removed - base64 data causes memory bloat in undo history
       }),
       limit: 100, // Limit history size
     }

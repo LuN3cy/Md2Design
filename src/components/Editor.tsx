@@ -19,11 +19,15 @@ export const Editor = () => {
   // Auto-paginate when switching from auto-height to fixed-height mode
   useEffect(() => {
     if (prevAutoHeightRef.current && !cardStyle.autoHeight && markdown.length > 500) {
-      const paginated = paginateMarkdown(markdown, cardStyle);
+      const paginatedArr = paginateMarkdown(markdown, cardStyle);
+      const paginated = paginatedArr.join('\n\n---\n\n');
       if (paginated !== markdown) {
-        setMarkdown(paginated);
-        setShowPaginationToast(true);
-        setTimeout(() => setShowPaginationToast(false), 4000);
+        // Defer state update to avoid cascading render warning
+        setTimeout(() => {
+          setMarkdown(paginated);
+          setShowPaginationToast(true);
+          setTimeout(() => setShowPaginationToast(false), 4000);
+        }, 0);
       }
     }
     prevAutoHeightRef.current = cardStyle.autoHeight;
@@ -111,7 +115,7 @@ export const Editor = () => {
       return;
     }
 
-    const escapedMarker = marker.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const escapedMarker = marker.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
     let regex;
     if (marker === '**') {
       regex = new RegExp(`^\\*\\*(.*)\\*\\*$`, 's');
@@ -172,7 +176,7 @@ export const Editor = () => {
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     
-    let lineStart = markdown.lastIndexOf('\n', start - 1) + 1;
+    const lineStart = markdown.lastIndexOf('\n', start - 1) + 1;
     let lineEnd = markdown.indexOf('\n', end);
     if (lineEnd === -1) lineEnd = markdown.length;
     
@@ -246,6 +250,7 @@ export const Editor = () => {
       textarea.focus();
       textarea.setSelectionRange(lineStart, lineStart + newBlockContent.length);
     }, 0);
+
   };
 
   const toggleAlignment = (align: 'left' | 'center' | 'right') => {
@@ -256,16 +261,20 @@ export const Editor = () => {
     const end = textarea.selectionEnd;
     
     // Find the full block (lines)
-    let lineStart = markdown.lastIndexOf('\n', start - 1) + 1;
+    const lineStart = markdown.lastIndexOf('\n', start - 1) + 1;
     let lineEnd = markdown.indexOf('\n', end);
     if (lineEnd === -1) lineEnd = markdown.length;
     
     const blockContent = markdown.substring(lineStart, lineEnd);
     
-    // Precise regex to match alignment tags and capture their content
-    // This matches <tag style="...text-align: (left|center|right)...">content</tag>
-    const regex = /<(span|p|div)\s+style="[^"]*text-align:\s*(left|center|right);?[^"]*">(.*?)<\/\1>/si;
-    const match = blockContent.match(regex);
+    // Match class-based alignment tags: <span class="align-xxx">content</span>
+    // Also match legacy style-based for backwards compatibility during transition
+    const classRegex = /<(span|div)\s+class="align-(left|center|right)">(.*?)<\/\1>/si;
+    const styleRegex = /<(span|p|div)\s+style="[^"]*text-align:\s*(left|center|right);?[^"]*">(.*?)<\/\1>/si;
+    
+    const classMatch = blockContent.match(classRegex);
+    const styleMatch = blockContent.match(styleRegex);
+    const match = classMatch || styleMatch;
 
     if (match) {
       const currentAlign = match[2];
@@ -280,8 +289,8 @@ export const Editor = () => {
           textarea.setSelectionRange(lineStart, lineStart + content.length);
         }, 0);
       } else {
-        // Switch alignment: replace the existing tag with a clean new one
-        const wrapped = `<span style="display:block;text-align:${align}">${content}</span>`;
+        // Switch alignment: use class-based approach (secure, no inline styles)
+        const wrapped = `<span class="align-${align}">${content}</span>`;
         const newText = markdown.substring(0, lineStart) + wrapped + markdown.substring(lineEnd);
         setMarkdown(newText);
         setTimeout(() => {
@@ -290,8 +299,8 @@ export const Editor = () => {
         }, 0);
       }
     } else {
-      // Toggle on: wrap the whole line
-      const wrapped = `<span style="display:block;text-align:${align}">${blockContent}</span>`;
+      // Toggle on: wrap with class-based alignment
+      const wrapped = `<span class="align-${align}">${blockContent}</span>`;
       const newText = markdown.substring(0, lineStart) + wrapped + markdown.substring(lineEnd);
       setMarkdown(newText);
       setTimeout(() => {
@@ -370,7 +379,8 @@ export const Editor = () => {
              
              // Auto-paginate if content is long
              if (!cardStyle.autoHeight && newFullText.length > 500) {
-                 const paginated = paginateMarkdown(newFullText, cardStyle);
+                 const paginatedArr = paginateMarkdown(newFullText, cardStyle);
+                 const paginated = paginatedArr.join('\n\n---\n\n');
                  if (paginated !== newFullText) {
                      setMarkdown(paginated);
                      setShowPaginationToast(true);
@@ -406,7 +416,8 @@ export const Editor = () => {
         const newFullText = markdown.substring(0, start) + plainText + markdown.substring(end);
         
         if (!cardStyle.autoHeight && newFullText.length > 500) {
-            const paginated = paginateMarkdown(newFullText, cardStyle);
+            const paginatedArr = paginateMarkdown(newFullText, cardStyle);
+            const paginated = paginatedArr.join('\n\n---\n\n');
             if (paginated !== newFullText) {
                 setMarkdown(paginated);
                 setShowPaginationToast(true);
@@ -461,7 +472,7 @@ export const Editor = () => {
               }}
             />
 
-            <div className="flex-shrink-0 border-b border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 p-2">
+            <div className="shrink-0 border-b border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 p-2">
                 <div className="flex items-center gap-1">
                   {/* Basic Styles */}
                   <div className="flex items-center bg-black/5 dark:bg-white/5 rounded-lg p-0.5">
@@ -618,7 +629,8 @@ export const Editor = () => {
                         // Wait for state to update (using setTimeout for simple sync)
                         setTimeout(() => {
                           const currentStyle = useStore.getState().cardStyle;
-                          const paginated = paginateMarkdown(markdown, currentStyle);
+                          const paginatedArr = paginateMarkdown(markdown, currentStyle);
+                          const paginated = paginatedArr.join('\n\n---\n\n');
                           if (paginated !== markdown) {
                               setMarkdown(paginated);
                               setShowPaginationToast(true);
@@ -652,6 +664,9 @@ export const Editor = () => {
               </div>
             
               <textarea
+                id="markdown-editor"
+                name="markdown"
+                aria-label="Markdown Editor"
                 ref={textareaRef}
                 className="flex-1 w-full h-full bg-transparent resize-none focus:outline-none font-mono text-sm leading-relaxed p-4 text-inherit placeholder-inherit/50 custom-scrollbar"
                 value={markdown}
@@ -659,6 +674,7 @@ export const Editor = () => {
                 onPaste={handlePaste}
                 placeholder="Type your markdown here..."
               />
+
             <div className="p-3 border-t border-black/10 dark:border-white/10 text-center space-y-1.5 bg-black/5 dark:bg-white/5">
               <div className="text-sm font-bold text-blue-600 dark:text-blue-400 opacity-90">
                 {t.editorHint}
@@ -689,20 +705,20 @@ export const Editor = () => {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[70] bg-black/80 dark:bg-white/90 text-white dark:text-black px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 backdrop-blur-md"
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-70 bg-black/80 dark:bg-white/90 text-white dark:text-black px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 backdrop-blur-md"
           >
             <div className="bg-green-500 rounded-full p-1">
               <Check size={14} className="text-white" strokeWidth={3} />
             </div>
             <div className="flex flex-col">
-                <span className="text-sm font-bold">已自动分页</span>
-                <span className="text-[10px] opacity-80">内容过长，已按页面高度自动切割。可用 "---" 手动调整。</span>
+                <span className="text-sm font-bold">{t.autoPaginatedToast}</span>
+                <span className="text-[10px] opacity-80">{t.autoPaginatedMsg}</span>
             </div>
             <button 
                 onClick={() => setShowPaginationToast(false)}
                 className="ml-2 opacity-50 hover:opacity-100 p-1"
             >
-                <ChevronLeft className="rotate-[-90deg]" size={14} />
+                <ChevronLeft className="-rotate-90" size={14} />
             </button>
           </motion.div>
         )}
