@@ -14,11 +14,11 @@ export const StyleSection = () => {
       <SidebarSection title={t.border} icon={<Monitor size={16} />}>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.width}</label>
+            <span className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.width}</span>
             <DraggableNumberInput value={cardStyle.borderWidth} min={0} max={20} onChange={(val) => updateCardStyle({ borderWidth: val })} icon={<ParameterIcon type="border" />} />
           </div>
           <div>
-            <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.cornerRadius}</label>
+            <span className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.cornerRadius}</span>
             <DraggableNumberInput value={cardStyle.borderRadius} min={0} max={100} onChange={(val) => updateCardStyle({ borderRadius: val })} icon={<ParameterIcon type="radius" />} />
           </div>
         </div>
@@ -48,11 +48,11 @@ export const StyleSection = () => {
           <div className="space-y-4">
              <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">X {t.xOffset}</label>
+                <span className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">X {t.xOffset}</span>
                 <DraggableNumberInput value={cardStyle.shadowConfig?.x ?? 0} min={-50} max={50} onChange={(val) => updateCardStyle({ shadowConfig: { ...cardStyle.shadowConfig, x: val } })} icon={<ParameterIcon type="x" />} />
               </div>
               <div>
-                <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">Y {t.yOffset}</label>
+                <span className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">Y {t.yOffset}</span>
                 <DraggableNumberInput value={cardStyle.shadowConfig?.y ?? 10} min={-50} max={50} onChange={(val) => updateCardStyle({ shadowConfig: { ...cardStyle.shadowConfig, y: val } })} icon={<ParameterIcon type="y" />} />
               </div>
             </div>
@@ -60,11 +60,11 @@ export const StyleSection = () => {
             <AdvancedToggle label={t.advancedSettings}>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.blur}</label>
+                  <span className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.blur}</span>
                   <DraggableNumberInput value={cardStyle.shadowConfig?.blur ?? 0} min={0} max={100} onChange={(val) => updateCardStyle({ shadowConfig: { ...cardStyle.shadowConfig, blur: val } })} icon={<ParameterIcon type="blur" />} />
                 </div>
                 <div>
-                  <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.spread}</label>
+                  <span className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.spread}</span>
                   <DraggableNumberInput value={cardStyle.shadowConfig?.spread ?? 0} min={-50} max={50} onChange={(val) => updateCardStyle({ shadowConfig: { ...cardStyle.shadowConfig, spread: val } })} icon={<ParameterIcon type="spread" />} />
                 </div>
               </div>
@@ -76,7 +76,7 @@ export const StyleSection = () => {
               />
               
               <div>
-                <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.opacity}</label>
+                <span className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.opacity}</span>
                 <DraggableNumberInput value={cardStyle.shadowConfig?.opacity ?? 0} min={0} max={1} step={0.01} onChange={(val) => updateCardStyle({ shadowConfig: { ...cardStyle.shadowConfig, opacity: val } })} icon={<ParameterIcon type="opacity" />} />
               </div>
             </AdvancedToggle>

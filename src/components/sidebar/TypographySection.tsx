@@ -25,7 +25,7 @@ export const TypographySection = ({ localFonts }: TypographySectionProps) => {
 
       {/* Preset Fonts */}
       <div className="mb-4">
-        <label className="text-xs font-medium mb-2 block opacity-70">{t.presetFonts}</label>
+        <span className="text-xs font-medium mb-2 block opacity-70">{t.presetFonts}</span>
         <div className="grid grid-cols-2 gap-2">
           {['GoogleSans-Regular', 'serif', 'monospace', 'Arial'].map((font) => (
             <button
@@ -46,7 +46,7 @@ export const TypographySection = ({ localFonts }: TypographySectionProps) => {
       
       {/* More Local Preset Fonts */}
       <div className="mb-4">
-        <label className="text-xs font-medium mb-2 block opacity-70">{t.morePresets}</label>
+        <span className="text-xs font-medium mb-2 block opacity-70">{t.morePresets}</span>
         <CustomSelect
           value={localFonts.some(f => f.name === cardStyle.fontFamily) ? cardStyle.fontFamily : ""}
           options={localFonts.map(f => ({ name: f.name, value: f.name }))}
@@ -58,7 +58,7 @@ export const TypographySection = ({ localFonts }: TypographySectionProps) => {
       </div>
       
       <div className="mb-4">
-        <label className="text-xs font-medium opacity-70 mb-2 block">{t.fontSize}</label>
+        <span className="text-xs font-medium opacity-70 mb-2 block">{t.fontSize}</span>
         <DraggableNumberInput value={cardStyle.fontSize} min={12} max={96} onChange={(val) => updateCardStyle({ fontSize: val })} icon={<ParameterIcon type="fontSize" />} />
       </div>
 
@@ -66,7 +66,7 @@ export const TypographySection = ({ localFonts }: TypographySectionProps) => {
         {/* Custom Fonts Selection */}
         {cardStyle.customFonts.length > 0 && (
           <div className="mb-4">
-            <label className="text-xs font-medium mb-2 block opacity-70">{t.customFonts}</label>
+            <span className="text-xs font-medium mb-2 block opacity-70">{t.customFonts}</span>
             <div className="grid grid-cols-2 gap-2 mb-2">
               {cardStyle.customFonts.map(font => (
                 <button
@@ -90,6 +90,8 @@ export const TypographySection = ({ localFonts }: TypographySectionProps) => {
         <div className="mb-4">
            <div className="relative">
              <input 
+               id="font-upload"
+               name="font-upload"
                type="file" 
                accept=".ttf,.otf,.woff,.woff2"
                onChange={(e) => {
@@ -156,21 +158,21 @@ export const TypographySection = ({ localFonts }: TypographySectionProps) => {
         
         <div className="grid grid-cols-3 gap-3 mb-4">
           <div>
-            <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.h1FontSize}</label>
+            <span className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.h1FontSize}</span>
             <DraggableNumberInput value={cardStyle.h1FontSize} min={16} max={48} onChange={(val) => updateCardStyle({ h1FontSize: val })} icon={<ParameterIcon type="fontSize" />} />
           </div>
           <div>
-            <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.h2FontSize}</label>
+            <span className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.h2FontSize}</span>
             <DraggableNumberInput value={cardStyle.h2FontSize} min={14} max={36} onChange={(val) => updateCardStyle({ h2FontSize: val })} icon={<ParameterIcon type="fontSize" />} />
           </div>
           <div>
-            <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.h3FontSize}</label>
+            <span className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.h3FontSize}</span>
             <DraggableNumberInput value={cardStyle.h3FontSize} min={12} max={24} onChange={(val) => updateCardStyle({ h3FontSize: val })} icon={<ParameterIcon type="fontSize" />} />
           </div>
         </div>
 
         <div>
-          <label className="text-xs font-medium opacity-70 mb-2 block">{t.headingScale}</label>
+          <span className="text-xs font-medium opacity-70 mb-2 block">{t.headingScale}</span>
           <DraggableNumberInput value={cardStyle.headingScale} min={0.5} max={2.0} step={0.1} onChange={(val) => updateCardStyle({ headingScale: val })} icon={<ParameterIcon type="fontSize" />} />
         </div>
       </AdvancedToggle>

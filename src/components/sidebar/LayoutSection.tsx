@@ -113,7 +113,7 @@ export const LayoutSection = () => {
           </div>
 
           <div>
-             <label className="text-xs font-medium mb-3 block opacity-70">{t.aspectRatio}</label>
+             <span className="text-xs font-medium mb-3 block opacity-70">{t.aspectRatio}</span>
              <div className="grid grid-cols-5 gap-2">
                {ASPECT_RATIOS.map((r) => (
                  <button
@@ -135,11 +135,11 @@ export const LayoutSection = () => {
           {cardStyle.aspectRatio === 'custom' && (
             <div className="grid grid-cols-2 gap-3 animate-in zoom-in-95 duration-200">
                <div>
-                  <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.width}</label>
+                  <span className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.width}</span>
                   <DraggableNumberInput value={cardStyle.width} min={400} max={2500} onChange={(val) => updateCardStyle({ width: val })} icon={<ParameterIcon type="width" />} />
                </div>
                <div>
-                  <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.height}</label>
+                  <span className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.height}</span>
                   <DraggableNumberInput value={cardStyle.height} min={400} max={5000} onChange={(val) => updateCardStyle({ height: val })} icon={<ParameterIcon type="width" />} />
                </div>
             </div>
@@ -151,17 +151,17 @@ export const LayoutSection = () => {
       <div className="mt-4 pt-4 border-t border-black/5 dark:border-white/5 space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.cardWidth}</label>
+            <span className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.cardWidth}</span>
             <DraggableNumberInput value={cardStyle.width} min={300} max={2000} onChange={(val) => updateCardStyle({ width: val })} icon={<ParameterIcon type="width" />} />
           </div>
           <div>
-            <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.cornerRadius}</label>
+            <span className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.cornerRadius}</span>
             <DraggableNumberInput value={cardStyle.borderRadius} min={0} max={100} onChange={(val) => updateCardStyle({ borderRadius: val })} icon={<ParameterIcon type="radius" />} />
           </div>
         </div>
 
         <div>
-           <label className="text-xs font-medium mb-2 block opacity-70">{t.margins}</label>
+           <span className="text-xs font-medium mb-2 block opacity-70">{t.margins}</span>
            <div className="grid grid-cols-2 gap-3">
              <DraggableNumberInput value={cardStyle.padding} label={t.all} min={0} max={200} onChange={(val) => updateCardStyle({ padding: val })} icon={<MarginIcon side="all" />} />
              <DraggableNumberInput value={cardStyle.cardPadding.top} label={t.vertical} min={0} max={200} onChange={(val) => updateCardStyle({ cardPadding: { ...cardStyle.cardPadding, top: val, bottom: val } })} icon={<MarginIcon side="top" />} />

@@ -106,7 +106,7 @@ export const BackgroundSection = () => {
                   />
 
                   <div>
-                    <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.angle} (°)</label>
+                    <span className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.angle} (°)</span>
                     <DraggableNumberInput value={cardStyle.gradientAngle || 135} min={0} max={360} onChange={(val) => {
                       const angle = val;
                       const start = cardStyle.gradientStart || '#667eea';
@@ -125,6 +125,8 @@ export const BackgroundSection = () => {
                <div className="space-y-3">
                  <div className="relative">
                    <input 
+                     id="background-image-upload"
+                     name="background-image-upload"
                      type="file" 
                      accept="image/*"
                      onChange={(e) => handleImageUpload(e, 'background')}
@@ -143,20 +145,20 @@ export const BackgroundSection = () => {
                      
                      <div className="grid grid-cols-2 gap-3">
                        <div>
-                         <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">X Offset</label>
+                         <span className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">X Offset</span>
                          <DraggableNumberInput value={cardStyle.backgroundConfig?.x || 0} min={-100} max={100} onChange={(val) => updateCardStyle({ backgroundConfig: { ...cardStyle.backgroundConfig, x: val } })} icon={<ParameterIcon type="x" />} />
                        </div>
                        <div>
-                         <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">Y Offset</label>
+                         <span className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">Y Offset</span>
                          <DraggableNumberInput value={cardStyle.backgroundConfig?.y || 0} min={-100} max={100} onChange={(val) => updateCardStyle({ backgroundConfig: { ...cardStyle.backgroundConfig, y: val } })} icon={<ParameterIcon type="y" />} />
                        </div>
                      </div>
                      <div>
-                       <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.scale}</label>
+                       <span className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.scale}</span>
                        <DraggableNumberInput value={cardStyle.backgroundConfig?.scale || 1} min={0.1} max={3} step={0.1} onChange={(val) => updateCardStyle({ backgroundConfig: { ...cardStyle.backgroundConfig, scale: val } })} icon={<ParameterIcon type="scale" />} />
                      </div>
                      <div>
-                       <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.blur}</label>
+                       <span className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.blur}</span>
                        <DraggableNumberInput value={cardStyle.backgroundConfig?.blur || 0} min={0} max={20} onChange={(val) => updateCardStyle({ backgroundConfig: { ...cardStyle.backgroundConfig, blur: val } })} icon={<ParameterIcon type="blur" />} />
                      </div>
                    </AdvancedToggle>
@@ -165,7 +167,7 @@ export const BackgroundSection = () => {
             )}
 
             <div className="pt-2">
-              <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.padding}</label>
+              <span className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.padding}</span>
               <DraggableNumberInput value={cardStyle.padding} min={0} max={100} onChange={(val) => updateCardStyle({ padding: val })} icon={<MarginIcon side="all" />} />
             </div>
           </div>
@@ -236,7 +238,7 @@ export const BackgroundSection = () => {
               />
 
               <div>
-                <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.angle} (°)</label>
+                <span className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.angle} (°)</span>
                 <DraggableNumberInput value={cardStyle.cardGradientAngle || 135} min={0} max={360} onChange={(val) => {
                   const angle = val;
                   const start = cardStyle.cardGradientStart || '#ffffff';
@@ -255,6 +257,8 @@ export const BackgroundSection = () => {
            <div className="space-y-3">
              <div className="relative">
                <input 
+                 id="card-background-image-upload"
+                 name="card-background-image-upload"
                  type="file" 
                  accept="image/*"
                  onChange={(e) => handleImageUpload(e, 'cardBackground')}
@@ -273,20 +277,20 @@ export const BackgroundSection = () => {
                  
                  <div className="grid grid-cols-2 gap-3">
                    <div>
-                     <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">X Offset</label>
+                     <span className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">X Offset</span>
                      <DraggableNumberInput value={cardStyle.cardBackgroundConfig?.x || 0} min={-100} max={100} step={0.1} onChange={(val) => updateCardStyle({ cardBackgroundConfig: { ...cardStyle.cardBackgroundConfig, x: val } })} icon={<ParameterIcon type="x" />} />
                    </div>
                    <div>
-                     <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">Y Offset</label>
+                     <span className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">Y Offset</span>
                      <DraggableNumberInput value={cardStyle.cardBackgroundConfig?.y || 0} min={-100} max={100} step={0.1} onChange={(val) => updateCardStyle({ cardBackgroundConfig: { ...cardStyle.cardBackgroundConfig, y: val } })} icon={<ParameterIcon type="y" />} />
                    </div>
                  </div>
                  <div>
-                   <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.scale}</label>
+                   <span className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.scale}</span>
                    <DraggableNumberInput value={cardStyle.cardBackgroundConfig?.scale || 1} min={0.1} max={3} step={0.01} onChange={(val) => updateCardStyle({ cardBackgroundConfig: { ...cardStyle.cardBackgroundConfig, scale: val } })} icon={<ParameterIcon type="scale" />} />
                  </div>
                  <div>
-                   <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.blur}</label>
+                   <span className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.blur}</span>
                    <DraggableNumberInput value={cardStyle.cardBackgroundConfig?.blur || 0} min={0} max={20} step={0.1} onChange={(val) => updateCardStyle({ cardBackgroundConfig: { ...cardStyle.cardBackgroundConfig, blur: val } })} icon={<ParameterIcon type="blur" />} />
                  </div>
                </AdvancedToggle>
