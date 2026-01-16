@@ -737,6 +737,14 @@ export const useStore = create<AppState>()(
           const cleanStyle = JSON.parse(JSON.stringify(preset.style));
           if (cleanStyle.backgroundImage?.startsWith('data:')) cleanStyle.backgroundImage = '';
           if (cleanStyle.cardBackgroundImage?.startsWith('data:')) cleanStyle.cardBackgroundImage = '';
+          
+          // Also clean customFonts in presets
+          if (cleanStyle.customFonts) {
+            cleanStyle.customFonts = cleanStyle.customFonts.filter(
+              (f: { url: string }) => !f.url.startsWith('data:')
+            );
+          }
+          
           return { ...preset, style: cleanStyle };
         });
 

@@ -14,6 +14,11 @@ interface ExportOptions {
     isOpen?: boolean; // For lazy size estimation - only calculate when modal is open
 }
 
+// Sanitize filename to remove illegal characters
+export const sanitizeFileName = (name: string): string => {
+    return name.replace(/[/:*?"<>|\\]/g, '_');
+};
+
 export const useExport = (options: ExportOptions) => {
     const { format, scale, exportMode, exportTarget, folderName, isOpen = false } = options;
     const t = useTranslation();
@@ -75,10 +80,7 @@ export const useExport = (options: ExportOptions) => {
         return parts.filter(Boolean).join('_');
     };
 
-    // Sanitize filename to remove illegal characters
-    const sanitizeFileName = (name: string): string => {
-        return name.replace(/[/:*?"<>|\\]/g, '_');
-    };
+
 
     // Calculate size estimation - lazy: only when modal is open
     useEffect(() => {
@@ -130,6 +132,8 @@ export const useExport = (options: ExportOptions) => {
     const handleExport = async () => {
         setIsExporting(true);
         setProgress(0);
+        setExportError(null);  // Clear any previous errors
+        let hasRuntimeError = false;
         try {
             const cards = Array.from(document.querySelectorAll('[id^="card-"]')) as HTMLElement[];
             const exportOptions = { 
@@ -216,6 +220,7 @@ export const useExport = (options: ExportOptions) => {
                     }
                     if (hasError) {
                         setExportError(t.corsError || 'Some images could not be exported due to CORS restrictions.');
+                        hasRuntimeError = true;
                     }
                     const content = await zip.generateAsync({ type: "blob" });
                     const zipName = sanitizeFileName(folderName || 'cards-export');
@@ -228,7 +233,7 @@ export const useExport = (options: ExportOptions) => {
                         const dirHandle = await window.showDirectoryPicker();
                         let targetHandle = dirHandle;
                         if (folderName) {
-                            targetHandle = await dirHandle.getDirectoryHandle(folderName, { create: true });
+                            targetHandle = await dirHandle.getDirectoryHandle(sanitizeFileName(folderName), { create: true });
                         }
 
                         const CONCURRENCY = 3;
@@ -236,6 +241,7 @@ export const useExport = (options: ExportOptions) => {
                             const blob = await generateBlob(card);
                             if (blob === null) {
                                 setExportError(t.corsError || 'Some images could not be exported due to CORS restrictions.');
+                                hasRuntimeError = true;
                                 updateProgress();
                                 return;
                             }
@@ -275,6 +281,7 @@ export const useExport = (options: ExportOptions) => {
                     const blob = await generateBlob(card);
                     if (blob === null) {
                         setExportError(t.corsError || 'Some images could not be exported due to CORS restrictions.');
+                        hasRuntimeError = true;
                         continue;
                     }
                     const fileName = sanitizeFileName(generateFileName(i, cards.length));
@@ -284,8 +291,10 @@ export const useExport = (options: ExportOptions) => {
                 }
             }
 
-            setShowSuccess(true);
-            setTimeout(() => setShowSuccess(false), 3000);
+            if (!hasRuntimeError) {
+                setShowSuccess(true);
+                setTimeout(() => setShowSuccess(false), 3000);
+            }
         } catch (err) {
             console.error('Export failed', err);
         } finally {

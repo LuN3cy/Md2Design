@@ -4,7 +4,7 @@ import { useTranslation } from '../i18n';
 import { Moon, Sun, Download, Languages, Info, X, ChevronDown, Check, Github, Sparkles, MessageSquare, Check as CheckIcon, RotateCcw, ThumbsUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChangelogModal } from './ChangelogModal';
-import { useExport } from '../hooks/useExport';
+import { useExport, sanitizeFileName } from '../hooks/useExport';
 
 import logoSvg from '../assets/logo.svg';
 
@@ -161,7 +161,7 @@ export const TopBar = () => {
       }
     });
 
-    return parts.filter(Boolean).join('_');
+    return sanitizeFileName(parts.filter(Boolean).join('_'));
   };
 
   const { 
