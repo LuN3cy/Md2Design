@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../store';
 import { useTranslation } from '../i18n';
-import { Moon, Sun, Download, Languages, Info, X, ChevronDown, Check, Github, Sparkles, MessageSquare, Check as CheckIcon, RotateCcw, ThumbsUp } from 'lucide-react';
+import { Moon, Sun, Download, Upload, Languages, Info, X, ChevronDown, Check, Github, Sparkles, MessageSquare, Check as CheckIcon, RotateCcw, ThumbsUp, FileJson, FileImage } from 'lucide-react';
 import { toPng, toJpeg } from 'html-to-image';
 import { motion, AnimatePresence } from 'framer-motion';
 import JSZip from 'jszip';
@@ -11,10 +11,15 @@ import { ChangelogModal } from './ChangelogModal';
 import logoSvg from '../assets/logo.svg';
 
 export const TopBar = () => {
-  const { theme, toggleTheme, toggleLanguage, isScrolled, previewZoom, setPreviewZoom } = useStore();
+  const { theme, toggleTheme, toggleLanguage, isScrolled, previewZoom, setPreviewZoom, setMarkdown, updateCardStyle } = useStore();
   const t = useTranslation();
   const [showContact, setShowContact] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [exportType, setExportType] = useState<'image' | 'data'>('image');
+  const [dataExportConfig, setDataExportConfig] = useState({
+    markdown: true,
+    style: true
+  });
   const [showChangelog, setShowChangelog] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showSupportTip, setShowSupportTip] = useState(false);
@@ -220,7 +225,76 @@ export const TopBar = () => {
     return () => clearTimeout(timer);
   }, [showExport, format, scale, t.calculating]);
 
+  const handleExportData = () => {
+    try {
+      const state = useStore.getState();
+      const data: any = {
+        version: '1.0.0',
+        timestamp: Date.now(),
+      };
+
+      if (dataExportConfig.markdown) {
+        data.content = state.markdown;
+      }
+
+      if (dataExportConfig.style) {
+        data.style = state.cardStyle;
+      }
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      saveAs(blob, `Md2Design_Backup_${new Date().toISOString().slice(0, 10)}.d2d`);
+      
+      setShowExport(false);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (error) {
+      console.error('Export data failed:', error);
+      alert('Export failed');
+    }
+  };
+
+  const handleImportFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const data = JSON.parse(content);
+        
+        if (data.content) {
+          setMarkdown(data.content);
+        }
+        
+        if (data.style) {
+          // Update style one by one to ensure merge works correctly if needed
+          // But here we might want a full replace or deep merge.
+          // Store's updateCardStyle usually does a shallow merge on top level, 
+          // but for nested objects like 'watermark', we need to be careful.
+          // Let's assume the store handles it or we pass the full object.
+          // updateCardStyle is: (style) => set((state) => ({ cardStyle: { ...state.cardStyle, ...style } }))
+          // So it merges.
+          updateCardStyle(data.style);
+        }
+
+        alert(t.importSuccess);
+      } catch (error) {
+        console.error('Import failed:', error);
+        alert(t.importError);
+      }
+    };
+    reader.readAsText(file);
+    // Reset input
+    event.target.value = '';
+  };
+
   const handleExport = async () => {
+    if (exportType === 'data') {
+      handleExportData();
+      return;
+    }
+
     setIsExporting(true);
     setProgress(0);
     try {
@@ -664,11 +738,27 @@ export const TopBar = () => {
           <div className="h-6 w-px bg-black/20 dark:bg-white/20 mx-1" />
 
           <button 
+             onClick={() => document.getElementById('import-file')?.click()}
+             className="flex items-center gap-2 px-4 py-1.5 bg-white/10 text-black dark:text-white rounded-full text-sm font-medium hover:bg-black/5 dark:hover:bg-white/20 transition-all border border-black/10 dark:border-white/10"
+             title={t.importData}
+          >
+            <Upload size={16} />
+            <span className="hidden sm:inline">{t.importData}</span>
+          </button>
+          <input 
+            type="file" 
+            id="import-file" 
+            className="hidden" 
+            accept=".d2d,.json"
+            onChange={handleImportFile}
+          />
+
+          <button 
              onClick={() => setShowExport(true)}
              className="flex items-center gap-2 px-4 py-1.5 bg-black text-white dark:bg-white dark:text-black rounded-full text-sm font-medium hover:opacity-90 transition-opacity shadow-lg"
           >
             <Download size={16} />
-            {t.exportImage}
+            {t.exportBtn}
           </button>
         </div>
       </div>
@@ -711,6 +801,85 @@ export const TopBar = () => {
                  </div>
 
                  <div className="space-y-6 flex-1 overflow-y-auto min-h-0 pr-2 -mr-2 custom-scrollbar">
+                   {/* Export Type Selector */}
+                   <div>
+                     <label className="text-xs font-medium text-slate-500 dark:text-white/50 mb-2 block uppercase tracking-wider">{t.exportType}</label>
+                     <div className="grid grid-cols-2 gap-2">
+                       <button
+                         onClick={() => setExportType('image')}
+                         className={`p-3 rounded-xl border transition-all flex flex-col items-center gap-2 ${
+                           exportType === 'image'
+                             ? 'bg-blue-500/10 border-blue-500/50 text-blue-500 dark:text-blue-400'
+                             : 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/5 hover:bg-black/10 dark:hover:bg-white/10'
+                         }`}
+                       >
+                         <FileImage size={24} />
+                         <span className="text-xs font-bold">{t.imageExport}</span>
+                       </button>
+                       <button
+                         onClick={() => setExportType('data')}
+                         className={`p-3 rounded-xl border transition-all flex flex-col items-center gap-2 ${
+                           exportType === 'data'
+                             ? 'bg-blue-500/10 border-blue-500/50 text-blue-500 dark:text-blue-400'
+                             : 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/5 hover:bg-black/10 dark:hover:bg-white/10'
+                         }`}
+                       >
+                         <FileJson size={24} />
+                         <span className="text-xs font-bold">{t.dataExport}</span>
+                       </button>
+                     </div>
+                   </div>
+
+                   {exportType === 'data' ? (
+                     <div className="space-y-6">
+                        <div>
+                           <label className="text-xs font-medium text-slate-500 dark:text-white/50 mb-2 block uppercase tracking-wider">{t.exportSettings}</label>
+                           <div className="flex flex-col gap-2">
+                              <button
+                                onClick={() => setDataExportConfig(prev => ({ ...prev, markdown: !prev.markdown }))}
+                                className={`p-3 rounded-xl border transition-all text-left flex items-center justify-between group ${
+                                  dataExportConfig.markdown
+                                    ? 'bg-blue-500/10 border-blue-500/50'
+                                    : 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/5 hover:bg-black/10 dark:hover:bg-white/10'
+                                }`}
+                              >
+                                <div className="text-sm font-medium text-slate-700 dark:text-white/80">{t.includeMarkdown}</div>
+                                <div className={`w-5 h-5 rounded border flex items-center justify-center ${
+                                   dataExportConfig.markdown ? 'bg-blue-500 border-blue-500 text-white' : 'border-black/20 dark:border-white/20'
+                                }`}>
+                                  {dataExportConfig.markdown && <Check size={14} />}
+                                </div>
+                              </button>
+
+                              <button
+                                onClick={() => setDataExportConfig(prev => ({ ...prev, style: !prev.style }))}
+                                className={`p-3 rounded-xl border transition-all text-left flex items-center justify-between group ${
+                                  dataExportConfig.style
+                                    ? 'bg-blue-500/10 border-blue-500/50'
+                                    : 'bg-black/5 dark:bg-white/5 border-black/5 dark:border-white/5 hover:bg-black/10 dark:hover:bg-white/10'
+                                }`}
+                              >
+                                <div className="text-sm font-medium text-slate-700 dark:text-white/80">{t.includeStyle}</div>
+                                <div className={`w-5 h-5 rounded border flex items-center justify-center ${
+                                   dataExportConfig.style ? 'bg-blue-500 border-blue-500 text-white' : 'border-black/20 dark:border-white/20'
+                                }`}>
+                                  {dataExportConfig.style && <Check size={14} />}
+                                </div>
+                              </button>
+                           </div>
+                        </div>
+                        
+                        <div className="p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 rounded-xl">
+                          <div className="flex items-start gap-3">
+                             <Info size={16} className="text-amber-500 mt-0.5 shrink-0" />
+                             <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+                               {t.dataProtection}
+                             </p>
+                          </div>
+                        </div>
+                     </div>
+                   ) : (
+                   <>
                    {/* Format & Scale Row */}
                    <div className="grid grid-cols-2 gap-4">
                      <div>
@@ -1042,26 +1211,29 @@ export const TopBar = () => {
                         </div>
                       )}
                    </div>
+                   </>)}
 
                    </div>
 
                    {/* Footer Section */}
                    <div className="mt-6 space-y-4 shrink-0 z-10">
-                     {/* Info Stats */}
-                     <div className="flex items-center justify-between p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] uppercase tracking-wider text-black/40 dark:text-white/40">Single Size</span>
-                        <span className="text-sm font-mono text-slate-700 dark:text-white/80">{previewSize.single}</span>
-                      </div>
-                      <div className="w-px h-8 bg-black/10 dark:bg-white/10" />
-                      <div className="flex flex-col items-end">
-                        <span className="text-[10px] uppercase tracking-wider text-black/40 dark:text-white/40">{t.total} Size</span>
-                        <span className="text-sm font-mono text-blue-500 dark:text-blue-400">{previewSize.total}</span>
-                      </div>
-                   </div>
+                     {/* Info Stats - Only for Image Export */}
+                     {exportType === 'image' && (
+                       <div className="flex items-center justify-between p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] uppercase tracking-wider text-black/40 dark:text-white/40">Single Size</span>
+                          <span className="text-sm font-mono text-slate-700 dark:text-white/80">{previewSize.single}</span>
+                        </div>
+                        <div className="w-px h-8 bg-black/10 dark:bg-white/10" />
+                        <div className="flex flex-col items-end">
+                          <span className="text-[10px] uppercase tracking-wider text-black/40 dark:text-white/40">{t.total} Size</span>
+                          <span className="text-sm font-mono text-blue-500 dark:text-blue-400">{previewSize.total}</span>
+                        </div>
+                       </div>
+                     )}
 
-                   {/* Action Button */}
-                   <div className="space-y-3">
+                     {/* Action Button */}
+                     <div className="space-y-3">
                      {isExporting && (
                        <div className="w-full bg-black/5 dark:bg-white/5 rounded-full h-1.5 overflow-hidden">
                          <motion.div 

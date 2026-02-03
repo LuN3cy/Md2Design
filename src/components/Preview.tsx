@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState, memo, useMemo } from 'react';
 import { useStore } from '../store';
+import { useDebounce } from '../hooks/useDebounce';
 import { getCardDimensions } from '../utils/cardUtils';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -739,6 +740,7 @@ Card.displayName = 'Card';
 
 export const Preview = () => {
   const { markdown, setIsScrolled, setActiveCardIndex, cardStyle, isEditorOpen, isSidebarOpen, previewZoom, setPreviewZoom } = useStore();
+  const debouncedMarkdown = useDebounce(markdown, 300);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
   const { width, height } = getCardDimensions(cardStyle);
@@ -807,8 +809,8 @@ export const Preview = () => {
   }, [setIsScrolled, setActiveCardIndex]);
   
   const pages = cardStyle.layoutMode === 'long'
-    ? [markdown] 
-    : markdown.split(/\n\s*---\s*\n|^\s*---\s*$/m).filter(page => page.trim() !== '');
+    ? [debouncedMarkdown] 
+    : debouncedMarkdown.split(/\n\s*---\s*\n|^\s*---\s*$/m).filter(page => page.trim() !== '');
 
   const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
   const paddingLeft = (isDesktop && isEditorOpen) ? '448px' : '2rem';

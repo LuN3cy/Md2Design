@@ -34,16 +34,18 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
           '2. Added: Independent color controls for Underline and Strikethrough text.',
           '3. Added: Underline shortcut button (<u>) in the editor toolbar.',
           '4. Added: Uppercase toggle for Watermark settings (allows disabling all-caps mode).',
-          '5. UI: Improved color settings layout for better accessibility.',
-          '6. Fixed: An issue where the watermark and page number might not display in the footer.',
+          '5. UI: Added transparency (Alpha) slider to all color pickers.',
+          '6. Fixed: Stability issues when modifying blockquote colors.',
+          '7. Fixed: Watermark and page numbers now display correctly in the footer.',
         ],
         zh: [
           '1. 修复：加粗、斜体和删除线文本现在可以正确应用所选的颜色；',
           '2. 新增：下划线和删除线的独立颜色控制功能；',
           '3. 新增：编辑器工具栏下划线快捷按钮（支持 <u> 标签）；',
           '4. 新增：水印大小写开关，支持关闭强制大写模式；',
-          '5. 优化：改进了侧边栏颜色设置的布局；',
-          '6. 修复：水印和页码在卡片底部可能无法显示的问题。',
+          '5. 新增：所有颜色选择器现在均支持透明度（Alpha）调节滑块；',
+          '6. 修复：修改引用框背景色时可能导致的程序闪退问题；',
+          '7. 修复：水印和页码在卡片底部可能无法显示的问题。',
         ]
       }
     },

@@ -172,4 +172,33 @@
       linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
     background-size: 40px 40px;
   }
+
+  /* Darken react-colorful alpha slider background */
+  .react-colorful__alpha {
+    background-image: 
+      linear-gradient(45deg, #ccc 25%, transparent 25%), 
+      linear-gradient(-45deg, #ccc 25%, transparent 25%), 
+      linear-gradient(45deg, transparent 75%, #ccc 75%), 
+      linear-gradient(-45deg, transparent 75%, #ccc 75%) !important;
+    background-size: 10px 10px !important;
+    background-position: 0 0, 0 5px, 5px -5px, -5px 0px !important;
+    background-color: #f0f0f0 !important;
+    border-radius: 4px !important;
+    margin-top: 8px !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .dark .react-colorful__alpha {
+    background-image: 
+      linear-gradient(45deg, #222 25%, transparent 25%), 
+      linear-gradient(-45deg, #222 25%, transparent 25%), 
+      linear-gradient(45deg, transparent 75%, #222 75%), 
+      linear-gradient(-45deg, transparent 75%, #222 75%) !important;
+    background-color: #000 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+
+  .react-colorful__alpha-handle {
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.3) !important;
+  }
 }

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { HexColorPicker } from 'react-colorful';
+import { HexColorPicker, HexAlphaColorPicker } from 'react-colorful';
 import { PRESET_GRADIENTS } from '../../store';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Check } from 'lucide-react';
@@ -310,11 +310,14 @@ export const DraggableNumberInput = ({
   );
 };
 
-export const ColorPicker = ({ color, onChange, label }: { color: string, onChange: (color: string) => void, label?: string }) => {
+export const ColorPicker = ({ color = '#000000', onChange, label }: { color: string, onChange: (color: string) => void, label?: string }) => {
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
+
+  // Safe color value for display and picker
+  const safeColor = typeof color === 'string' ? color : '#000000';
 
   const updatePosition = () => {
     if (buttonRef.current) {
@@ -380,7 +383,7 @@ export const ColorPicker = ({ color, onChange, label }: { color: string, onChang
           <div className="relative flex-1">
             <input 
               type="text" 
-              value={color.toUpperCase()} 
+              value={safeColor.toUpperCase()} 
               onChange={(e) => onChange(e.target.value)}
               className="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded px-2 py-2 text-[10px] font-mono focus:outline-none focus:border-black/30 dark:focus:border-white/30 text-center"
             />
@@ -389,7 +392,7 @@ export const ColorPicker = ({ color, onChange, label }: { color: string, onChang
             ref={buttonRef}
             onClick={() => setIsOpen(!isOpen)}
             className="w-8 h-8 rounded-full border border-black/20 dark:border-white/20 shadow-sm relative overflow-hidden transition-transform active:scale-95 flex-shrink-0"
-            style={{ backgroundColor: color }}
+            style={{ backgroundColor: safeColor }}
           />
         </div>
       </div>
@@ -404,7 +407,7 @@ export const ColorPicker = ({ color, onChange, label }: { color: string, onChang
             width: 'fit-content'
           }}
         >
-          <HexColorPicker color={color} onChange={onChange} />
+          <HexAlphaColorPicker color={safeColor} onChange={onChange} />
         </div>,
         document.body
       )}

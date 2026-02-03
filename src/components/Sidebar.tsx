@@ -721,8 +721,8 @@ export const Sidebar = () => {
                     <div className="grid grid-cols-2 gap-3">
                       <ColorPicker 
                         label={t.blockquoteBackground}
-                        color={cardStyle.blockquoteBackgroundColor.substring(0, 7)}
-                        onChange={(val) => handleColorChange('blockquoteBackgroundColor', val + '20')}
+                        color={cardStyle.blockquoteBackgroundColor}
+                        onChange={(val) => handleColorChange('blockquoteBackgroundColor', val)}
                       />
                       <ColorPicker 
                         label={t.blockquoteBorder}
@@ -735,8 +735,8 @@ export const Sidebar = () => {
                   <ColorSectionWrapper>
                     <ColorPicker 
                       label={t.codeBackground}
-                      color={cardStyle.codeBackgroundColor.substring(0, 7)}
-                      onChange={(val) => handleColorChange('codeBackgroundColor', val + '20')}
+                      color={cardStyle.codeBackgroundColor}
+                      onChange={(val) => handleColorChange('codeBackgroundColor', val)}
                     />
                   </ColorSectionWrapper>
 
