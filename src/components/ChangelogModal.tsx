@@ -22,6 +22,26 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
   // Update data
   const updates = [
     {
+      version: 'v1.10.0',
+      date: '2026-02-03',
+      title: {
+        en: 'Data Portability & Protection',
+        zh: '数据导入导出与安全保护'
+      },
+      changes: {
+        en: [
+          '1. Added .d2d file format support for full data export and import (includes content, styles, and themes).',
+          '2. Crash Protection: Automatically downloads a recovery file (.d2d) if the application encounters an unexpected error.',
+          '3. Enhanced color pickers with precise alpha (transparency) control.',
+        ],
+        zh: [
+          '1. 新增 .d2d 文件格式支持，实现完整数据的导入与导出（包含内容、样式及主题配置）；',
+          '2. 崩溃自动保存：当程序遇到意外错误时，系统将自动下载备份文件 (.d2d) 以保护您的数据；',
+          '3. 颜色选择器优化：全面支持透明度（Alpha）调节功能。',
+        ]
+      }
+    },
+    {
       version: 'v1.9.1',
       date: '2026-01-10',
       title: {
