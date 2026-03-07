@@ -57,22 +57,9 @@ export const Sidebar = () => {
       .then(res => res.json())
       .then(data => {
         setLocalFonts(data);
-        // Inject current font if it's in the list
-        const currentFont = data.find((f: LocalFont) => f.name === cardStyle.fontFamily);
-        if (currentFont) {
-          injectLocalFontFace(currentFont.name, currentFont.filename);
-        }
       })
       .catch(err => console.error('Failed to load local fonts list:', err));
   }, []);
-
-  useEffect(() => {
-    // Inject local font if it's currently selected and in the list
-    const currentFont = localFonts.find(f => f.name === cardStyle.fontFamily);
-    if (currentFont) {
-      injectLocalFontFace(currentFont.name, currentFont.filename);
-    }
-  }, [cardStyle.fontFamily, localFonts]);
 
   const handleReset = () => {
     setIsResetting(true);
@@ -792,7 +779,7 @@ export const Sidebar = () => {
                 {/* Current Font Display */}
                 <div className="bg-black/5 dark:bg-white/5 p-4 rounded-lg border border-black/10 dark:border-white/10 mb-4 text-center">
                   <div className="text-xs opacity-50 mb-1 uppercase tracking-wider">{t.currentFont}</div>
-                  <div className="text-xl font-bold truncate" style={{ fontFamily: cardStyle.fontFamily }}>
+                  <div className="text-xl font-bold truncate" style={{ fontFamily: `"${cardStyle.fontFamily}"` }}>
                     {cardStyle.fontFamily}
                   </div>
                 </div>
@@ -801,7 +788,7 @@ export const Sidebar = () => {
                 <div className="mb-4">
                   <label className="text-xs font-medium mb-2 block opacity-70">{t.presetFonts}</label>
                   <div className="grid grid-cols-2 gap-2">
-                    {['GoogleSans-Regular', 'serif', 'monospace', 'Arial'].map((font) => (
+                    {['GoogleSans-Regular', 'Helvetica', 'Noto Serif SC', 'GoogleSansCode-Regular'].map((font) => (
                       <button
                         key={font}
                         onClick={() => updateCardStyle({ fontFamily: font })}
@@ -810,9 +797,9 @@ export const Sidebar = () => {
                             ? 'bg-black/10 dark:bg-white/20 border-black/20 dark:border-white/40 shadow-sm' 
                             : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/10'
                         }`}
-                        style={{ fontFamily: font }}
+                        style={{ fontFamily: `"${font}"` }}
                       >
-                        {font}
+                        {font.replace('-Regular', '').replace('Code', ' Mono').replace(' SC', '')}
                       </button>
                     ))}
                   </div>

@@ -12,13 +12,17 @@ export const injectLocalFontFace = (name: string, filename: string) => {
                  extension === 'woff' ? 'woff' :
                  extension === 'woff2' ? 'woff2' : 'truetype';
 
+  const isVariable = name.toLowerCase().includes('variable') || 
+                   filename.toLowerCase().includes('variable') ||
+                   filename.toLowerCase().includes('_opsz,wght');
+
   const style = document.createElement('style');
   style.id = fontId;
   style.innerHTML = `
     @font-face {
       font-family: "${name}";
       src: url("fonts/${filename}") format("${format}");
-      font-weight: 400;
+      font-weight: ${isVariable ? '100 900' : '400'};
       font-style: normal;
       font-display: swap;
     }

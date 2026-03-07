@@ -20,17 +20,49 @@ export const CustomSelect = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+
+  useLayoutEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setCoords({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width
+      });
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (isOpen && buttonRef.current) {
+        const rect = buttonRef.current.getBoundingClientRect();
+        setCoords({
+          top: rect.bottom + window.scrollY,
+          left: rect.left + window.scrollX,
+          width: rect.width
+        });
+      }
+    };
+
+    if (isOpen) {
+      window.addEventListener('scroll', handleScroll, true);
+      window.addEventListener('resize', handleScroll);
+    }
+    return () => {
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
       
-      // If clicking the button itself, let the button's onClick handler handle it
       if (buttonRef.current && buttonRef.current.contains(target)) {
         return;
       }
 
-      // If clicking inside the dropdown menu, don't close
       if (dropdownRef.current && dropdownRef.current.contains(target)) {
         return;
       }
@@ -39,7 +71,6 @@ export const CustomSelect = ({
     };
 
     if (isOpen) {
-      // Use capture phase to handle events before they might be stopped
       document.addEventListener('mousedown', handleClickOutside, true);
     }
     return () => {
@@ -66,48 +97,55 @@ export const CustomSelect = ({
         <ChevronDown size={14} className={`opacity-40 transition-transform duration-200 group-hover:opacity-60 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
-      {isOpen && (
-        <AnimatePresence>
-          <motion.div
-            ref={dropdownRef}
-            initial={{ opacity: 0, scale: 0.95, y: -10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            transition={{ duration: 0.1 }}
-            className="absolute left-0 right-0 mt-1 bg-white dark:bg-[#2a2a2a] border border-black/10 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden py-1.5 backdrop-blur-xl z-[100]"
-            style={{ 
-              maxHeight: '240px'
-            }}
-          >
-            <div className="max-h-[230px] overflow-y-auto custom-scrollbar overflow-x-hidden">
-              {options.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onChange(opt.value);
-                    setIsOpen(false);
-                  }}
-                  className={`w-full text-left px-3 py-2.5 text-xs transition-colors hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-between group ${
-                    value === opt.value ? 'bg-black/5 dark:bg-white/10 font-semibold text-blue-500' : 'opacity-100'
-                  }`}
-                  style={{ fontFamily: opt.value }}
-                >
-                  <span className="truncate">{opt.name}</span>
-                  {value === opt.value && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                    >
-                      <Check size={14} />
-                    </motion.div>
-                  )}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        </AnimatePresence>
+      {isOpen && createPortal(
+        <div className="fixed inset-0 z-[9999]">
+          <div className="absolute inset-0" onClick={() => setIsOpen(false)} />
+          <AnimatePresence>
+            <motion.div
+              ref={dropdownRef}
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              transition={{ duration: 0.1 }}
+              className="absolute bg-white dark:bg-[#2a2a2a] border border-black/10 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden py-1.5 backdrop-blur-xl"
+              style={{ 
+                top: `${coords.top + 4}px`,
+                left: `${coords.left}px`,
+                width: `${coords.width}px`,
+                maxHeight: '240px'
+              }}
+            >
+              <div className="max-h-[230px] overflow-y-auto custom-scrollbar overflow-x-hidden">
+                {options.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onChange(opt.value);
+                      setIsOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2.5 text-xs transition-colors hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-between group ${
+                      value === opt.value ? 'bg-black/5 dark:bg-white/10 font-semibold text-blue-500' : 'opacity-100'
+                    }`}
+                    style={{ fontFamily: `"${opt.value}"` }}
+                  >
+                    <span className="truncate">{opt.name}</span>
+                    {value === opt.value && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                      >
+                        <Check size={14} />
+                      </motion.div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>,
+        document.body
       )}
     </div>
   );

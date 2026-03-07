@@ -16,11 +16,19 @@
     "filename": "MiSans-Regular.ttf"
   },
   {
+    "name": "NotoSerifSC-Regular",
+    "filename": "NotoSerifSC-Regular.ttf"
+  },
+  {
     "name": "OPPO Sans 4.0",
     "filename": "OPPO Sans 4.0.ttf"
   },
   {
     "name": "Poppins-Regular",
     "filename": "Poppins-Regular.ttf"
+  },
+  {
+    "name": "SourceSerif4-VariableFont_opsz,wght",
+    "filename": "SourceSerif4-VariableFont_opsz,wght.ttf"
   }
 ]
