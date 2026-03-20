@@ -413,10 +413,6 @@ const Card = memo(({
           >
             {renderInnerBackground()}
 
-            {cardStyle.template === 'default' && (
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-pink-400 to-orange-300 blur-3xl opacity-20 -z-0 pointer-events-none" />
-            )}
-            
             <div className="relative z-10 h-full flex flex-col pointer-events-none">
               <div 
                 className="prose prose-sm max-w-none flex-1 pointer-events-auto overflow-hidden break-words [&>*:first-child]:mt-0 prose-hr:hidden prose-blockquote:before:content-none prose-blockquote:after:content-none prose-blockquote:border-none [&_*]:border-none !prose-quotes-none"
