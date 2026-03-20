@@ -22,7 +22,26 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
   // Update data
   const updates = [
     {
-      version: 'v1.10.0',
+      version: 'v10.0.1',
+      date: '2026-03-20',
+      title: {
+        en: 'Cleaner Card Visual',
+        zh: '卡片视觉纯净度优化'
+      },
+      changes: {
+        en: [
+          '1. Removed the legacy red diffuse blur in the top-right area of default cards.',
+          '2. Improved visual consistency so card output stays cleaner and more focused on content.',
+        ],
+        zh: [
+          '1. 移除默认卡片右上角遗留的红色弥散模糊效果；',
+          '2. 优化卡片视觉一致性，让画面更纯净、内容更聚焦。',
+        ]
+      },
+      demo: 'v1001-clean-card'
+    },
+    {
+      version: 'v10.0.0',
       date: '2026-02-03',
       title: {
         en: 'Data Portability & Protection',
@@ -703,6 +722,12 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
                            </div>
                          )}
 
+                         {currentUpdate.demo === 'v1001-clean-card' && (
+                           <div className="bg-slate-100 dark:bg-[#0a0a0a] rounded-2xl p-6 md:p-8 border border-black/5 dark:border-white/10 shadow-inner min-h-[280px] flex flex-col items-center justify-center">
+                              <DemoCleanCardVisual />
+                           </div>
+                         )}
+
                          {currentUpdate.demo === 'v185-features' && (
                            <div className="bg-slate-100 dark:bg-[#0a0a0a] rounded-2xl p-6 md:p-8 border border-black/5 dark:border-white/10 shadow-inner min-h-[400px] flex flex-col items-center gap-12">
                               <DemoBlankLine />
@@ -916,6 +941,48 @@ const DemoFlexibleLayout = () => {
               ? '在“灵活”模式下，不仅高度自适应内容，还能通过 "---" 实现多卡片独立排版。' 
               : 'In "Flexible" mode, height adapts to content and "---" enables multi-card layouts.'}
           </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const DemoCleanCardVisual = () => {
+  const { language } = useStore();
+
+  return (
+    <div className="w-full max-w-3xl flex flex-col items-center gap-6">
+      <div className="text-xs font-bold text-slate-400 uppercase tracking-wider text-center">
+        {language === 'zh' ? '修复前后对比' : 'Before & After'}
+      </div>
+      <div className="w-full flex items-center justify-center gap-4 md:gap-8">
+        <div className="flex flex-col items-center gap-3">
+          <div className="relative w-40 h-52 rounded-2xl border border-black/10 dark:border-white/10 bg-[#fffdf8] overflow-hidden shadow-lg">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-pink-400 to-orange-300 blur-2xl opacity-35" />
+            <div className="relative z-10 p-4 space-y-2">
+              <div className="h-1.5 w-20 rounded-full bg-slate-700/30" />
+              <div className="h-1.5 w-16 rounded-full bg-slate-700/20" />
+              <div className="h-1.5 w-24 rounded-full bg-slate-700/15" />
+            </div>
+          </div>
+          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+            {language === 'zh' ? '修复前' : 'Before'}
+          </span>
+        </div>
+        <div className="w-9 h-9 rounded-full border border-black/10 dark:border-white/15 bg-white/80 dark:bg-white/10 flex items-center justify-center text-slate-500 dark:text-slate-300">
+          <ChevronRight size={16} />
+        </div>
+        <div className="flex flex-col items-center gap-3">
+          <div className="relative w-40 h-52 rounded-2xl border border-black/10 dark:border-white/10 bg-[#fffdf8] overflow-hidden shadow-lg">
+            <div className="relative z-10 p-4 space-y-2">
+              <div className="h-1.5 w-20 rounded-full bg-slate-700/30" />
+              <div className="h-1.5 w-16 rounded-full bg-slate-700/20" />
+              <div className="h-1.5 w-24 rounded-full bg-slate-700/15" />
+            </div>
+          </div>
+          <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+            {language === 'zh' ? '修复后' : 'After'}
+          </span>
         </div>
       </div>
     </div>
