@@ -1342,7 +1342,7 @@ export const TopBar = () => {
                   setShowContact(false);
                   setShowSupport(true);
                 }}
-                className="w-full mt-6 p-4 bg-red-500/10 dark:bg-red-500/20 border border-red-500/20 dark:border-red-500/30 rounded-xl flex items-center justify-center gap-3 text-red-600 dark:text-red-400 font-bold transition-all hover:bg-red-500/20 dark:hover:bg-red-500/30 hover:scale-[1.02] group"
+                className="w-full mt-6 p-4 bg-yellow-500/10 dark:bg-yellow-500/20 border border-yellow-500/20 dark:border-yellow-500/30 rounded-xl flex items-center justify-center gap-3 text-yellow-600 dark:text-yellow-400 font-bold transition-all hover:bg-yellow-500/20 dark:hover:bg-yellow-500/30 hover:scale-[1.02] group"
               >
                 <ThumbsUp size={18} className="group-hover:animate-bounce" />
                 <span>{t.supportMe}</span>

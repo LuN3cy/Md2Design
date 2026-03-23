@@ -1395,7 +1395,7 @@ const DemoSupportFlow = () => {
               </p>
               <button
                 onClick={() => setSelectedAmount(null)}
-                className="w-full p-3 bg-red-500/10 dark:bg-red-500/20 border border-red-500/20 dark:border-red-500/30 rounded-xl flex items-center justify-center gap-2 text-red-600 dark:text-red-400 text-xs font-bold transition-all hover:bg-red-500/20"
+                className="w-full p-3 bg-yellow-500/10 dark:bg-yellow-500/20 border border-yellow-500/20 dark:border-yellow-500/30 rounded-xl flex items-center justify-center gap-2 text-yellow-600 dark:text-yellow-400 text-xs font-bold transition-all hover:bg-yellow-500/20"
               >
                 <ThumbsUp size={14} />
                 <span>{t.supportMe}</span>
