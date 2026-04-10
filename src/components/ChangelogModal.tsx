@@ -22,6 +22,26 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
   // Update data
   const updates = [
     {
+      version: 'v10.0.2',
+      date: '2026-04-11',
+      title: {
+        en: 'Image Interaction & Scaling Fixes',
+        zh: '图片交互与缩放修复'
+      },
+      changes: {
+        en: [
+          '1. Fixed: Resolved the issue where images could not be dragged after import or preview zooming.',
+          '2. Fixed: Images can now be correctly deleted or moved even when the preview is zoomed in.',
+          '3. Improved: Added scaling synchronization for the image editor to ensure precise positioning at any zoom level.',
+        ],
+        zh: [
+          '1. 修复：解决了图片导入后或预览缩放后无法拖动的问题；',
+          '2. 修复：解决了预览放大后图片无法删除或移动的异常；',
+          '3. 优化：新增图片编辑器缩放同步功能，确保在任何缩放比例下都能精准定位。',
+        ]
+      }
+    },
+    {
       version: 'v10.0.1',
       date: '2026-03-20',
       title: {

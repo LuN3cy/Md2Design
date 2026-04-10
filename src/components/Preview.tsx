@@ -550,6 +550,7 @@ const Card = memo(({
                   key={image.id}
                   size={{ width: image.width, height: image.height }}
                   position={{ x: image.x, y: image.y }}
+                  scale={scale}
                   onDragStart={() => {
                     setDraggingId(image.id);
                     // Detach from spacer when user starts dragging manually
@@ -615,6 +616,7 @@ const Card = memo(({
                     setDraggingId(null);
                   }}
                   bounds="parent"
+                  cancel=".image-toolbar, .image-toolbar *"
                   className={`pointer-events-auto ${selectedImageId === image.id ? 'z-30' : 'z-20'}`}
                   enableResizing={selectedImageId === image.id}
                   lockAspectRatio={image.resizeMode === 'contain'}
@@ -648,7 +650,12 @@ const Card = memo(({
                       {selectedImageId === image.id && (
                         <>
                           {/* Image Toolbar */}
-                          <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-xl shadow-xl border border-black/5 dark:border-white/10 z-[60] pointer-events-auto">
+                          <div
+                            className="image-toolbar absolute -top-12 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-xl shadow-xl border border-black/5 dark:border-white/10 z-[60] pointer-events-auto"
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                            }}
+                          >
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
