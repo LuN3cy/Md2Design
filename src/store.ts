@@ -75,10 +75,20 @@ export type CardStyle = {
 
   customCSS: string;
   template: 'default'; // Simplified to just default
+  h1FontFamily: string;
+  h2FontFamily: string;
+  h3FontFamily: string;
+  h4FontFamily: string;
+  h5FontFamily: string;
+  h6FontFamily: string;
+
   fontSize: number;
   h1FontSize: number;
   h2FontSize: number;
   h3FontSize: number;
+  h4FontSize: number;
+  h5FontSize: number;
+  h6FontSize: number;
   headingScale: number;
   
   customFonts: CustomFont[];
@@ -109,6 +119,9 @@ export type CardStyle = {
   h2BackgroundColor: string; // Background for H2 pill
   h3Color: string;
   h3LineColor: string;
+  h4Color: string;
+  h5Color: string;
+  h6Color: string;
   underlineColor: string;
   strikethroughColor: string;
 
@@ -281,10 +294,20 @@ const INITIAL_CARD_STYLE: CardStyle = {
   cardPaddingSync: true,
   customCSS: '',
       template: 'default',
+  h1FontFamily: '',
+  h2FontFamily: '',
+  h3FontFamily: '',
+  h4FontFamily: '',
+  h5FontFamily: '',
+  h6FontFamily: '',
+
   fontSize: 18,
   h1FontSize: 32,
   h2FontSize: 24,
   h3FontSize: 20,
+  h4FontSize: 18,
+  h5FontSize: 16,
+  h6FontSize: 14,
   headingScale: 1.0,
       customFonts: [],
 
@@ -309,6 +332,9 @@ const INITIAL_CARD_STYLE: CardStyle = {
   h2BackgroundColor: '#3b82f6',
   h3Color: '#000000',
   h3LineColor: '#3b82f6',
+  h4Color: '',
+  h5Color: '',
+  h6Color: '',
   underlineColor: '#3b82f6',
   strikethroughColor: '#000000',
   shadowEnabled: false,
@@ -557,9 +583,29 @@ export const useStore = create<AppState>()(
     {
       name: 'md2card-storage',
       storage: createJSONStorage(() => localStorage),
-      version: 6,
+      version: 7,
       migrate: (persistedState: any, version: number) => {
         if (!persistedState) return persistedState;
+
+        if (version <= 6) {
+          if (persistedState.cardStyle) {
+            persistedState.cardStyle = {
+              ...persistedState.cardStyle,
+              h1FontFamily: persistedState.cardStyle.h1FontFamily ?? '',
+              h2FontFamily: persistedState.cardStyle.h2FontFamily ?? '',
+              h3FontFamily: persistedState.cardStyle.h3FontFamily ?? '',
+              h4FontFamily: persistedState.cardStyle.h4FontFamily ?? '',
+              h5FontFamily: persistedState.cardStyle.h5FontFamily ?? '',
+              h6FontFamily: persistedState.cardStyle.h6FontFamily ?? '',
+              h4FontSize: persistedState.cardStyle.h4FontSize ?? 18,
+              h5FontSize: persistedState.cardStyle.h5FontSize ?? 16,
+              h6FontSize: persistedState.cardStyle.h6FontSize ?? 14,
+              h4Color: persistedState.cardStyle.h4Color ?? '',
+              h5Color: persistedState.cardStyle.h5Color ?? '',
+              h6Color: persistedState.cardStyle.h6Color ?? '',
+            };
+          }
+        }
 
         // Ensure layoutMode exists if cardStyle exists (robustness check)
         if (persistedState.cardStyle && !persistedState.cardStyle.layoutMode) {
