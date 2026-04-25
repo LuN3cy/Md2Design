@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { HexAlphaColorPicker } from 'react-colorful';
-import { PRESET_GRADIENTS } from '../../store';
+import { PRESET_GRADIENTS, PRESET_MESH_GRADIENTS } from '../../store';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Check } from 'lucide-react';
 
@@ -464,6 +464,25 @@ export const GradientPresets = ({ onSelect }: { onSelect: (start: string, end: s
           style={{ background: `linear-gradient(135deg, ${g.start} 0%, ${g.end} 100%)` }}
           title={g.name}
         />
+      ))}
+    </div>
+  );
+};
+
+
+export const MeshGradientPresets = ({ onSelect }: { onSelect: (value: string) => void }) => {
+  return (
+    <div className="grid grid-cols-4 gap-2 mt-2">
+      {PRESET_MESH_GRADIENTS.map((g, i) => (
+        <button
+          key={i}
+          onClick={() => onSelect(g.value)}
+          className="w-full aspect-square rounded-md border border-black/10 dark:border-white/10 transition-transform active:scale-95 hover:scale-105 relative overflow-hidden"
+          style={{ background: g.value }}
+          title={g.name}
+        >
+          {/* A small overlay to make it look nicer if needed */}
+        </button>
       ))}
     </div>
   );

@@ -5,7 +5,7 @@ import { Palette, Type, Layout, Monitor, ChevronRight, ChevronLeft, Smartphone, 
 import { motion, AnimatePresence } from 'framer-motion';
 import { PresetsManager } from './sidebar/PresetsManager';
 import { SidebarSection, AdvancedToggle } from './sidebar/SidebarSection';
-import { DraggableNumberInput, ColorPicker, ParameterIcon, MarginIcon, GradientPresets, CustomSelect } from './sidebar/SidebarControls';
+import { DraggableNumberInput, ColorPicker, ParameterIcon, MarginIcon, GradientPresets, MeshGradientPresets, CustomSelect } from './sidebar/SidebarControls';
 import { type LocalFont } from '../utils/fonts';
 
 const RatioIcon = ({ ratio, orientation }: { ratio: string, orientation: 'portrait' | 'landscape' }) => {
@@ -433,7 +433,7 @@ export const Sidebar = () => {
                 {cardStyle.enableBackground && (
                   <div className="space-y-4">
                     <div className="flex p-1 bg-black/5 dark:bg-white/5 rounded mb-2">
-                      {['solid', 'gradient', 'image'].map((type) => (
+                      {['solid', 'gradient', 'mesh', 'image'].map((type) => (
                         <button 
                           key={type}
                           onClick={() => updateCardStyle({ backgroundType: type as any })}
@@ -450,6 +450,19 @@ export const Sidebar = () => {
                         color={cardStyle.backgroundValue.startsWith('#') ? cardStyle.backgroundValue : '#ffffff'}
                         onChange={(val) => updateCardStyle({ backgroundValue: val })}
                       />
+                    )}
+
+                    
+                    {cardStyle.backgroundType === 'mesh' && (
+                      <div className="space-y-3">
+                        <MeshGradientPresets
+                          onSelect={(value) => {
+                            updateCardStyle({
+                              backgroundValue: value
+                            });
+                          }}
+                        />
+                      </div>
                     )}
 
                     {cardStyle.backgroundType === 'gradient' && (
@@ -563,7 +576,7 @@ export const Sidebar = () => {
               {/* Card Colors */}
               <SidebarSection title={t.cardBackground} icon={<Palette size={16} />}>
                 <div className="flex p-1 bg-black/5 dark:bg-white/5 rounded mb-2">
-                  {['solid', 'gradient', 'image'].map((type) => (
+                  {['solid', 'gradient', 'mesh', 'image'].map((type) => (
                     <button 
                       key={type}
                       onClick={() => updateCardStyle({ cardBackgroundType: type as any })}
@@ -580,6 +593,19 @@ export const Sidebar = () => {
                       color={cardStyle.backgroundColor}
                       onChange={(val) => updateCardStyle({ backgroundColor: val })}
                     />
+                )}
+
+                
+                {cardStyle.cardBackgroundType === 'mesh' && (
+                  <div className="space-y-3">
+                    <MeshGradientPresets
+                      onSelect={(value) => {
+                        updateCardStyle({
+                          cardGradientValue: value
+                        });
+                      }}
+                    />
+                  </div>
                 )}
 
                 {cardStyle.cardBackgroundType === 'gradient' && (
