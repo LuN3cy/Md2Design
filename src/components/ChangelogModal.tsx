@@ -22,7 +22,7 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
   // Update data
   const updates = [
     {
-      version: 'v10.1.0',
+      version: 'v1.11.0',
       date: '2026-05-15',
       title: {
         en: 'Mesh Gradients & Customization',
@@ -42,11 +42,11 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
           '4. 随机生成：新增一键“随机生成”功能，基于您选择的颜色无限生成全新的排版与混合效果。',
         ]
       },
-      demo: 'v1010-mesh-gradient'
+      demo: 'v1110-mesh-gradient'
     },
 
     {
-      version: 'v10.0.3',
+      version: 'v1.10.3',
       date: '2026-04-25',
       title: {
         en: 'Advanced Heading Customization',
@@ -66,7 +66,7 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
       }
     },
     {
-      version: 'v10.0.2',
+      version: 'v1.10.2',
       date: '2026-04-11',
       title: {
         en: 'Image Interaction & Scaling Fixes',
@@ -86,7 +86,7 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
       }
     },
     {
-      version: 'v10.0.1',
+      version: 'v1.10.1',
       date: '2026-03-20',
       title: {
         en: 'Cleaner Card Visual',
@@ -105,7 +105,7 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
       demo: 'v1001-clean-card'
     },
     {
-      version: 'v10.0.0',
+      version: 'v1.10.0',
       date: '2026-02-03',
       title: {
         en: 'Data Portability & Protection',
@@ -520,7 +520,7 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
   // Group updates by minor version (e.g., v1.8.x under v1.8)
   const groupedUpdates = updates.reduce((acc, update) => {
     const versionParts = update.version.split('.');
-    const minorVersion = `${versionParts[0]}`; // Group by major version (v10, v1, etc.)
+    const minorVersion = `${versionParts[0]}.${versionParts[1]}`; // Group by minor version (v1.11, v1.10, etc.)
     if (!acc[minorVersion]) acc[minorVersion] = [];
     acc[minorVersion].push(update);
     return acc;
@@ -529,7 +529,8 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
   const minorVersions = Object.keys(groupedUpdates).sort((a, b) => {
     const aParts = a.slice(1).split('.').map(Number);
     const bParts = b.slice(1).split('.').map(Number);
-    return bParts[0] - aParts[0];
+    if (aParts[0] !== bParts[0]) return bParts[0] - aParts[0];
+    return bParts[1] - aParts[1];
   });
 
   useEffect(() => {
@@ -542,7 +543,7 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
   useEffect(() => {
     if (selectedVersion) {
       const versionParts = selectedVersion.split('.');
-      const minorVersion = `${versionParts[0]}`;
+      const minorVersion = `${versionParts[0]}.${versionParts[1]}`;
       setExpandedGroups(prev => ({ ...prev, [minorVersion]: true }));
     }
   }, [selectedVersion]);
@@ -779,7 +780,7 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
                             </h3>
                          </div>
 
-                         {currentUpdate.demo === 'v1010-mesh-gradient' && (
+                         {currentUpdate.demo === 'v1110-mesh-gradient' && (
                            <div className="bg-slate-100 dark:bg-[#0a0a0a] rounded-2xl p-6 md:p-8 border border-black/5 dark:border-white/10 shadow-inner min-h-[300px] flex flex-col items-center justify-center">
                               <DemoMeshGradient />
                            </div>
