@@ -34,12 +34,14 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
           '2. Presets: Included 8 professionally designed mesh gradient presets (e.g., Cosmic Magic, Sunset Vibes).',
           '3. Customization: Support for creating custom mesh gradients by selecting 2-5 base colors.',
           '4. Randomize: Added a "Randomize" button to generate infinite variations of your selected colors.',
+          '5. Noise Controls: Adjust the density, size, or completely disable the frosted glass noise effect.',
         ],
         zh: [
           '1. 全新背景：新增“弥散渐变 (Mesh Gradient)”模式，自带高级的磨砂玻璃噪点质感；',
           '2. 精美预设：内置 8 款专业调色的弥散渐变预设（如星空魔法、晚霞氛围等）；',
           '3. 自由定制：支持自由选择 2-5 组颜色，算法将自动为您生成柔和的弥散渐变背景；',
           '4. 随机生成：新增一键“随机生成”功能，基于您选择的颜色无限生成全新的排版与混合效果。',
+          '5. 噪点控制：新增对噪点材质的独立控制选项，支持自定义噪点密度、尺寸，甚至完全关闭噪点。',
         ]
       },
       demo: 'v1110-mesh-gradient'
