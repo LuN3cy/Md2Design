@@ -1,12 +1,12 @@
 import { motion, AnimatePresence, useMotionValue, useAnimation } from 'framer-motion';
-import { X, CheckCircle2, Sparkles, Monitor, ChevronRight, RotateCcw, Plus, Image as ImageIcon, Trash2, Maximize2, MessageSquare, ChevronDown, Check as CheckIcon, Layout, List, Square, Frame, ThumbsUp, Info, Github, Languages, Sun, StretchHorizontal, MousePointer2, Crop, CornerDownLeft } from 'lucide-react';
+import { X, CheckCircle2, Sparkles, Monitor, ChevronRight, RotateCcw, Plus, Image as ImageIcon, Trash2, Maximize2, MessageSquare, ChevronDown, Check as CheckIcon, Layout, List, Square, Frame, ThumbsUp, Info, Github, Languages, Sun, StretchHorizontal, MousePointer2, Crop, CornerDownLeft, Shuffle } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import { useStore } from '../store';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 import rehypeRaw from 'rehype-raw';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 
 interface ChangelogModalProps {
   isOpen: boolean;
@@ -21,6 +21,50 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
 
   // Update data
   const updates = [
+    {
+      version: 'v10.1.0',
+      date: '2026-05-15',
+      title: {
+        en: 'Mesh Gradients & Customization',
+        zh: '弥散渐变与自由定制'
+      },
+      changes: {
+        en: [
+          '1. New Background: Added beautiful Mesh Gradients with a frosted glass noise texture.',
+          '2. Presets: Included 8 professionally designed mesh gradient presets (e.g., Cosmic Magic, Sunset Vibes).',
+          '3. Customization: Support for creating custom mesh gradients by selecting 2-5 base colors.',
+          '4. Randomize: Added a "Randomize" button to generate infinite variations of your selected colors.',
+        ],
+        zh: [
+          '1. 全新背景：新增“弥散渐变 (Mesh Gradient)”模式，自带高级的磨砂玻璃噪点质感；',
+          '2. 精美预设：内置 8 款专业调色的弥散渐变预设（如星空魔法、晚霞氛围等）；',
+          '3. 自由定制：支持自由选择 2-5 组颜色，算法将自动为您生成柔和的弥散渐变背景；',
+          '4. 随机生成：新增一键“随机生成”功能，基于您选择的颜色无限生成全新的排版与混合效果。',
+        ]
+      },
+      demo: 'v1010-mesh-gradient'
+    },
+
+    {
+      version: 'v10.0.3',
+      date: '2026-04-25',
+      title: {
+        en: 'Advanced Heading Customization',
+        zh: '高级标题样式自定义'
+      },
+      changes: {
+        en: [
+          '1. Added advanced customization for markdown headings (H1-H6).',
+          '2. Added independent settings for font family, font size, and color for each heading level.',
+          '3. Updated the state store and i18n configurations to support these new properties.',
+        ],
+        zh: [
+          '1. 新增针对 Markdown 各级标题（H1-H6）的高级样式自定义功能；',
+          '2. 新增对各级标题的字体、字号和颜色的独立设置；',
+          '3. 更新状态存储与多语言配置以支持这些新特性。',
+        ]
+      }
+    },
     {
       version: 'v10.0.2',
       date: '2026-04-11',
@@ -476,7 +520,7 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
   // Group updates by minor version (e.g., v1.8.x under v1.8)
   const groupedUpdates = updates.reduce((acc, update) => {
     const versionParts = update.version.split('.');
-    const minorVersion = `${versionParts[0]}.${versionParts[1]}`;
+    const minorVersion = `${versionParts[0]}`; // Group by major version (v10, v1, etc.)
     if (!acc[minorVersion]) acc[minorVersion] = [];
     acc[minorVersion].push(update);
     return acc;
@@ -485,8 +529,7 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
   const minorVersions = Object.keys(groupedUpdates).sort((a, b) => {
     const aParts = a.slice(1).split('.').map(Number);
     const bParts = b.slice(1).split('.').map(Number);
-    if (aParts[0] !== bParts[0]) return bParts[0] - aParts[0];
-    return bParts[1] - aParts[1];
+    return bParts[0] - aParts[0];
   });
 
   useEffect(() => {
@@ -499,7 +542,7 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
   useEffect(() => {
     if (selectedVersion) {
       const versionParts = selectedVersion.split('.');
-      const minorVersion = `${versionParts[0]}.${versionParts[1]}`;
+      const minorVersion = `${versionParts[0]}`;
       setExpandedGroups(prev => ({ ...prev, [minorVersion]: true }));
     }
   }, [selectedVersion]);
@@ -736,6 +779,12 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
                             </h3>
                          </div>
 
+                         {currentUpdate.demo === 'v1010-mesh-gradient' && (
+                           <div className="bg-slate-100 dark:bg-[#0a0a0a] rounded-2xl p-6 md:p-8 border border-black/5 dark:border-white/10 shadow-inner min-h-[300px] flex flex-col items-center justify-center">
+                              <DemoMeshGradient />
+                           </div>
+                         )}
+
                          {currentUpdate.demo === 'v190-features' && (
                            <div className="bg-slate-100 dark:bg-[#0a0a0a] rounded-2xl p-6 md:p-8 border border-black/5 dark:border-white/10 shadow-inner min-h-[400px] flex flex-col items-center gap-12">
                               <DemoFlexibleLayout />
@@ -868,6 +917,56 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
     </AnimatePresence>
   );
 };
+
+
+const DemoMeshGradient = () => {
+  const [key, setKey] = useState(0);
+  
+  const colors = ['#ff9a9e', '#fecfef', '#a1c4fd'];
+  const baseColor = colors[2];
+  const noiseSVG = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.15'/%3E%3C/svg%3E")`;
+  
+  // Use useMemo with key as dependency to trigger re-generation
+  const background = useMemo(() => {
+    const radials = colors.slice(0, 2).map((col) => {
+      const x = Math.floor(Math.random() * 100);
+      const y = Math.floor(Math.random() * 100);
+      const spread = Math.floor(Math.random() * 40) + 40;
+      return `radial-gradient(at ${x}% ${y}%, ${col} 0px, transparent ${spread}%)`;
+    });
+    return `${noiseSVG}, ${radials.join(', ')}, ${baseColor}`;
+  }, [key]);
+
+  return (
+    <div className="w-full max-w-sm space-y-6">
+      <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black flex flex-col items-center justify-center border border-white/10 group shadow-lg">
+        <div 
+          className="absolute inset-0 transition-all duration-1000 ease-in-out" 
+          style={{ background }} 
+        />
+        
+        <div className="absolute inset-0 z-20 flex items-center justify-center">
+          <div className="flex items-center gap-3 px-5 py-3 rounded-xl bg-black/20 backdrop-blur-md border border-white/20 shadow-xl">
+             <div className="w-6 h-6 rounded-full bg-[#ff9a9e] shadow-md border border-white/20" />
+             <div className="w-6 h-6 rounded-full bg-[#fecfef] shadow-md border border-white/20" />
+             <div className="w-6 h-6 rounded-full bg-[#a1c4fd] shadow-md border border-white/20" />
+             
+             <button 
+               onClick={() => setKey(k => k + 1)}
+               className="ml-2 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors active:scale-95 group/btn cursor-pointer"
+             >
+               <Shuffle className="text-white opacity-90 group-hover/btn:rotate-180 transition-transform duration-500" size={16} />
+             </button>
+          </div>
+        </div>
+      </div>
+      <div className="text-[10px] text-slate-400 text-center font-medium opacity-70">
+        Try clicking the shuffle button to generate new patterns!
+      </div>
+    </div>
+  );
+};
+
 
 const DemoFlexibleLayout = () => {
   const { language } = useStore();

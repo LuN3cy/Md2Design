@@ -236,15 +236,15 @@ export const PresetsManager = () => {
                 className="w-full h-full transition-transform group-hover:scale-110"
                 style={{ 
                   background: preset.style.enableBackground 
-                    ? (preset.style.backgroundType === 'gradient' ? preset.style.backgroundValue : (preset.style.backgroundType === 'solid' ? preset.style.backgroundValue : '#000'))
-                    : (preset.style.cardBackgroundType === 'gradient' ? preset.style.cardGradientValue : preset.style.backgroundColor)
+                    ? (preset.style.backgroundType === 'gradient' || preset.style.backgroundType === 'mesh' ? preset.style.backgroundValue : (preset.style.backgroundType === 'solid' ? preset.style.backgroundValue : '#000'))
+                    : (preset.style.cardBackgroundType === 'gradient' || preset.style.cardBackgroundType === 'mesh' ? preset.style.cardGradientValue : preset.style.backgroundColor)
                 }}
               >
                 <div className="absolute inset-0 flex items-center justify-center p-2">
                   <div 
                     className="w-full h-full rounded-[2px] shadow-sm border border-black/5"
                     style={{ 
-                      background: preset.style.cardBackgroundType === 'gradient' ? preset.style.cardGradientValue : preset.style.backgroundColor,
+                      background: preset.style.cardBackgroundType === 'gradient' || preset.style.cardBackgroundType === 'mesh' ? preset.style.cardGradientValue : preset.style.backgroundColor,
                       borderRadius: Math.min(preset.style.borderRadius / 12, 2)
                     }}
                   />

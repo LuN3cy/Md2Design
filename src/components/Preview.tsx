@@ -137,7 +137,7 @@ const Card = memo(({
              />
           </div>
         );
-    } else if (cardStyle.backgroundType === 'gradient') {
+    } else if (cardStyle.backgroundType === 'gradient' || cardStyle.backgroundType === 'mesh') {
         return <div className="absolute inset-0 -z-10 pointer-events-none" style={{ background: cardStyle.backgroundValue }} />;
     } else {
         // Solid
@@ -166,7 +166,7 @@ const Card = memo(({
              />
           </div>
         );
-     } else if (type === 'gradient') {
+     } else if (type === 'gradient' || type === 'mesh') {
         return <div className="absolute inset-0 -z-10 pointer-events-none" style={{ ...radiusStyle, background: cardStyle.cardGradientValue }} />;
      } else {
         // Solid (default)
