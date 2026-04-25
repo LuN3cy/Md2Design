@@ -49,6 +49,7 @@ export type CardStyle = {
   // Background Fill
   enableBackground: boolean;
   backgroundType: 'solid' | 'gradient' | 'image' | 'mesh';
+  meshColors: string[];
   backgroundValue: string;
   // Gradient state for UI controls
   gradientStart: string;
@@ -96,6 +97,7 @@ export type CardStyle = {
   // Element Specific Styles
   // Card Background (Inner)
   cardBackgroundType: 'solid' | 'gradient' | 'image' | 'mesh';
+  cardMeshColors: string[];
   cardGradientStart: string;
   cardGradientEnd: string;
   cardGradientAngle: number;
@@ -316,6 +318,7 @@ const INITIAL_CARD_STYLE: CardStyle = {
   enableBackground: false,
   backgroundType: 'gradient',
   backgroundValue: 'linear-gradient(135deg, #d4dcdd 0%, #94b1cc 100%)',
+  meshColors: ['#ff9a9e', '#fecfef', '#a1c4fd'],
   gradientStart: '#d4dcdd',
   gradientEnd: '#94b1cc',
   gradientAngle: 135,
@@ -359,6 +362,7 @@ const INITIAL_CARD_STYLE: CardStyle = {
   cardGradientEnd: '#f0f0f0',
   cardGradientAngle: 135,
   cardGradientValue: 'linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%)',
+  cardMeshColors: ['#ff9a9e', '#fecfef', '#a1c4fd'],
   cardBackgroundImage: '',
   cardBackgroundConfig: {
     x: 0,
@@ -626,9 +630,19 @@ export const useStore = create<AppState>()(
     {
       name: 'md2card-storage',
       storage: createJSONStorage(() => localStorage),
-      version: 7,
+      version: 8,
       migrate: (persistedState: any, version: number) => {
         if (!persistedState) return persistedState;
+
+        if (version <= 7) {
+          if (persistedState.cardStyle) {
+            persistedState.cardStyle = {
+              ...persistedState.cardStyle,
+              meshColors: persistedState.cardStyle.meshColors || ['#ff9a9e', '#fecfef', '#a1c4fd'],
+              cardMeshColors: persistedState.cardStyle.cardMeshColors || ['#ff9a9e', '#fecfef', '#a1c4fd'],
+            };
+          }
+        }
 
         if (version <= 6) {
           if (persistedState.cardStyle) {

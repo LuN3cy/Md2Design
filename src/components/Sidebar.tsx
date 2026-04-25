@@ -5,7 +5,7 @@ import { Palette, Type, Layout, Monitor, ChevronRight, ChevronLeft, Smartphone, 
 import { motion, AnimatePresence } from 'framer-motion';
 import { PresetsManager } from './sidebar/PresetsManager';
 import { SidebarSection, AdvancedToggle } from './sidebar/SidebarSection';
-import { DraggableNumberInput, ColorPicker, ParameterIcon, MarginIcon, GradientPresets, MeshGradientPresets, CustomSelect } from './sidebar/SidebarControls';
+import { DraggableNumberInput, ColorPicker, ParameterIcon, MarginIcon, GradientPresets, MeshGradientPresets, MeshColorCustomizer, generateMeshGradient, CustomSelect } from './sidebar/SidebarControls';
 import { type LocalFont } from '../utils/fonts';
 
 const RatioIcon = ({ ratio, orientation }: { ratio: string, orientation: 'portrait' | 'landscape' }) => {
@@ -462,6 +462,21 @@ export const Sidebar = () => {
                             });
                           }}
                         />
+                        <MeshColorCustomizer
+                          colors={cardStyle.meshColors || ['#ff9a9e', '#fecfef', '#a1c4fd']}
+                          onChange={(newColors) => {
+                            updateCardStyle({
+                              meshColors: newColors,
+                              backgroundValue: generateMeshGradient(newColors)
+                            });
+                          }}
+                          onRandomize={() => {
+                            const currentColors = cardStyle.meshColors || ['#ff9a9e', '#fecfef', '#a1c4fd'];
+                            updateCardStyle({
+                              backgroundValue: generateMeshGradient(currentColors)
+                            });
+                          }}
+                        />
                       </div>
                     )}
 
@@ -602,6 +617,21 @@ export const Sidebar = () => {
                       onSelect={(value) => {
                         updateCardStyle({
                           cardGradientValue: value
+                        });
+                      }}
+                    />
+                    <MeshColorCustomizer
+                      colors={cardStyle.cardMeshColors || ['#ff9a9e', '#fecfef', '#a1c4fd']}
+                      onChange={(newColors) => {
+                        updateCardStyle({
+                          cardMeshColors: newColors,
+                          cardGradientValue: generateMeshGradient(newColors)
+                        });
+                      }}
+                      onRandomize={() => {
+                        const currentColors = cardStyle.cardMeshColors || ['#ff9a9e', '#fecfef', '#a1c4fd'];
+                        updateCardStyle({
+                          cardGradientValue: generateMeshGradient(currentColors)
                         });
                       }}
                     />
