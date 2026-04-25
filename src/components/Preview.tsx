@@ -174,10 +174,19 @@ const Card = memo(({
      }
   };
 
-  const components = useMemo(() => ({
+  const components = useMemo(() => {
+    const getFontFamily = (ff: string) => {
+      if (!ff) return 'inherit';
+      return ['serif', 'monospace', 'sans-serif', 'cursive', 'fantasy', 'system-ui'].includes(ff) 
+        ? `${ff}, system-ui, sans-serif`
+        : `"${ff}", system-ui, sans-serif`;
+    };
+
+    return {
     h1: ({ node: _node, style, ...props }: any) => (
       <h1 
         style={{
+          fontFamily: getFontFamily(cardStyle.h1FontFamily),
           color: cardStyle.h1Color || cardStyle.textColor, 
           fontSize: `${cardStyle.h1FontSize}px`,
           borderBottom: `4px solid ${cardStyle.h1LineColor || cardStyle.accentColor}`,
@@ -190,6 +199,7 @@ const Card = memo(({
     h2: ({ node: _node, style, ...props }: any) => (
       <h2 
         style={{
+          fontFamily: getFontFamily(cardStyle.h2FontFamily),
           backgroundColor: cardStyle.h2BackgroundColor || cardStyle.accentColor, 
           color: cardStyle.h2Color || '#fff',
           fontSize: `${cardStyle.h2FontSize}px`,
@@ -202,6 +212,7 @@ const Card = memo(({
     h3: ({ node: _node, style, ...props }: any) => (
       <h3 
         style={{
+          fontFamily: getFontFamily(cardStyle.h3FontFamily),
           color: cardStyle.h3Color || cardStyle.textColor,
           borderLeftColor: cardStyle.h3LineColor || cardStyle.accentColor,
           fontSize: `${cardStyle.h3FontSize}px`,
@@ -214,8 +225,9 @@ const Card = memo(({
     h4: ({ node: _node, style, ...props }: any) => (
        <h4
         style={{
-          color: cardStyle.textColor,
-          fontSize: `${cardStyle.headingScale * 1.125}rem`,
+          fontFamily: getFontFamily(cardStyle.h4FontFamily),
+          color: cardStyle.h4Color || cardStyle.textColor,
+          fontSize: `${cardStyle.h4FontSize}px`,
           ...style
         }}
         className="font-bold mb-2 mt-4 first:mt-0"
@@ -225,8 +237,9 @@ const Card = memo(({
     h5: ({ node: _node, style, ...props }: any) => (
        <h5
         style={{
-          color: cardStyle.textColor,
-          fontSize: `${cardStyle.headingScale * 1}rem`,
+          fontFamily: getFontFamily(cardStyle.h5FontFamily),
+          color: cardStyle.h5Color || cardStyle.textColor,
+          fontSize: `${cardStyle.h5FontSize}px`,
           ...style
         }}
         className="font-bold mb-2 mt-4 first:mt-0"
@@ -236,8 +249,9 @@ const Card = memo(({
     h6: ({ node: _node, style, ...props }: any) => (
        <h6
         style={{
-          color: cardStyle.textColor,
-          fontSize: `${cardStyle.headingScale * 0.875}rem`,
+          fontFamily: getFontFamily(cardStyle.h6FontFamily),
+          color: cardStyle.h6Color || cardStyle.textColor,
+          fontSize: `${cardStyle.h6FontSize}px`,
           ...style
         }}
         className="font-bold mb-2 mt-4 first:mt-0"
@@ -363,7 +377,8 @@ const Card = memo(({
         </code>
       );
     }
-  }), [cardStyle]);
+  };
+  }, [cardStyle]);
 
   return (
     <div 

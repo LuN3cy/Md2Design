@@ -771,6 +771,26 @@ export const Sidebar = () => {
                       />
                     </div>
                   </ColorSectionWrapper>
+
+                  <ColorSectionWrapper>
+                    <div className="grid grid-cols-3 gap-3">
+                      <ColorPicker 
+                        label={t.h4Color}
+                        color={cardStyle.h4Color || cardStyle.textColor}
+                        onChange={(val) => handleColorChange('h4Color', val)}
+                      />
+                      <ColorPicker 
+                        label={t.h5Color}
+                        color={cardStyle.h5Color || cardStyle.textColor}
+                        onChange={(val) => handleColorChange('h5Color', val)}
+                      />
+                      <ColorPicker 
+                        label={t.h6Color}
+                        color={cardStyle.h6Color || cardStyle.textColor}
+                        onChange={(val) => handleColorChange('h6Color', val)}
+                      />
+                    </div>
+                  </ColorSectionWrapper>
                 </AdvancedToggle>
               </SidebarSection>
 
@@ -918,21 +938,51 @@ export const Sidebar = () => {
                   <div className="grid grid-cols-3 gap-3 mb-4">
                     <div>
                       <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.h1FontSize}</label>
-                      <DraggableNumberInput value={cardStyle.h1FontSize} min={16} max={48} onChange={(val) => updateCardStyle({ h1FontSize: val })} icon={<ParameterIcon type="fontSize" />} />
+                      <DraggableNumberInput value={cardStyle.h1FontSize} min={16} max={64} onChange={(val) => updateCardStyle({ h1FontSize: val })} icon={<ParameterIcon type="fontSize" />} />
                     </div>
                     <div>
                       <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.h2FontSize}</label>
-                      <DraggableNumberInput value={cardStyle.h2FontSize} min={14} max={36} onChange={(val) => updateCardStyle({ h2FontSize: val })} icon={<ParameterIcon type="fontSize" />} />
+                      <DraggableNumberInput value={cardStyle.h2FontSize} min={14} max={48} onChange={(val) => updateCardStyle({ h2FontSize: val })} icon={<ParameterIcon type="fontSize" />} />
                     </div>
                     <div>
                       <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.h3FontSize}</label>
-                      <DraggableNumberInput value={cardStyle.h3FontSize} min={12} max={24} onChange={(val) => updateCardStyle({ h3FontSize: val })} icon={<ParameterIcon type="fontSize" />} />
+                      <DraggableNumberInput value={cardStyle.h3FontSize} min={12} max={36} onChange={(val) => updateCardStyle({ h3FontSize: val })} icon={<ParameterIcon type="fontSize" />} />
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.h4FontSize}</label>
+                      <DraggableNumberInput value={cardStyle.h4FontSize} min={10} max={32} onChange={(val) => updateCardStyle({ h4FontSize: val })} icon={<ParameterIcon type="fontSize" />} />
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.h5FontSize}</label>
+                      <DraggableNumberInput value={cardStyle.h5FontSize} min={10} max={28} onChange={(val) => updateCardStyle({ h5FontSize: val })} icon={<ParameterIcon type="fontSize" />} />
+                    </div>
+                    <div>
+                      <label className="text-[10px] uppercase tracking-wider opacity-60 mb-1 block">{t.h6FontSize}</label>
+                      <DraggableNumberInput value={cardStyle.h6FontSize} min={10} max={24} onChange={(val) => updateCardStyle({ h6FontSize: val })} icon={<ParameterIcon type="fontSize" />} />
                     </div>
                   </div>
 
-                  <div>
-                    <label className="text-xs font-medium opacity-70 mb-2 block">{t.headingScale}</label>
-                    <DraggableNumberInput value={cardStyle.headingScale} min={0.5} max={2.0} step={0.1} onChange={(val) => updateCardStyle({ headingScale: val })} icon={<ParameterIcon type="fontSize" />} />
+                  {/* Heading Font Families */}
+                  <div className="mt-4 pt-4 border-t border-black/10 dark:border-white/10">
+                    <label className="text-xs font-medium mb-3 block opacity-70">{t.headingFonts}</label>
+                    <div className="space-y-3">
+                      {[1, 2, 3, 4, 5, 6].map(level => {
+                        const key = `h${level}FontFamily` as keyof CardStyle;
+                        return (
+                          <div key={level} className="flex items-center justify-between gap-2">
+                            <span className="text-[10px] uppercase tracking-wider opacity-60 w-6">H{level}</span>
+                            <div className="flex-1">
+                              <CustomSelect
+                                value={cardStyle[key] as string}
+                                options={[{ name: t.defaultFont, value: "" }, ...localFonts.map(f => ({ name: f.name, value: f.name })), ...cardStyle.customFonts.map(f => ({ name: f.name, value: f.name }))]}
+                                placeholder={t.defaultFont}
+                                onChange={(fontName) => updateCardStyle({ [key]: fontName })}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </AdvancedToggle>
               </SidebarSection>
