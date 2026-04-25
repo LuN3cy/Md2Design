@@ -22,7 +22,7 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
   // Update data
   const updates = [
     {
-      version: 'v10.1.0',
+      version: 'v1.11.0',
       date: '2026-05-15',
       title: {
         en: 'Mesh Gradients & Customization',
@@ -34,19 +34,21 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
           '2. Presets: Included 8 professionally designed mesh gradient presets (e.g., Cosmic Magic, Sunset Vibes).',
           '3. Customization: Support for creating custom mesh gradients by selecting 2-5 base colors.',
           '4. Randomize: Added a "Randomize" button to generate infinite variations of your selected colors.',
+          '5. Noise Controls: Adjust the density, size, or completely disable the frosted glass noise effect.',
         ],
         zh: [
           '1. 全新背景：新增“弥散渐变 (Mesh Gradient)”模式，自带高级的磨砂玻璃噪点质感；',
           '2. 精美预设：内置 8 款专业调色的弥散渐变预设（如星空魔法、晚霞氛围等）；',
           '3. 自由定制：支持自由选择 2-5 组颜色，算法将自动为您生成柔和的弥散渐变背景；',
           '4. 随机生成：新增一键“随机生成”功能，基于您选择的颜色无限生成全新的排版与混合效果。',
+          '5. 噪点控制：新增对噪点材质的独立控制选项，支持自定义噪点密度、尺寸，甚至完全关闭噪点。',
         ]
       },
-      demo: 'v1010-mesh-gradient'
+      demo: 'v1110-mesh-gradient'
     },
 
     {
-      version: 'v10.0.3',
+      version: 'v1.10.3',
       date: '2026-04-25',
       title: {
         en: 'Advanced Heading Customization',
@@ -66,7 +68,7 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
       }
     },
     {
-      version: 'v10.0.2',
+      version: 'v1.10.2',
       date: '2026-04-11',
       title: {
         en: 'Image Interaction & Scaling Fixes',
@@ -86,7 +88,7 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
       }
     },
     {
-      version: 'v10.0.1',
+      version: 'v1.10.1',
       date: '2026-03-20',
       title: {
         en: 'Cleaner Card Visual',
@@ -105,7 +107,7 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
       demo: 'v1001-clean-card'
     },
     {
-      version: 'v10.0.0',
+      version: 'v1.10.0',
       date: '2026-02-03',
       title: {
         en: 'Data Portability & Protection',
@@ -520,7 +522,7 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
   // Group updates by minor version (e.g., v1.8.x under v1.8)
   const groupedUpdates = updates.reduce((acc, update) => {
     const versionParts = update.version.split('.');
-    const minorVersion = `${versionParts[0]}`; // Group by major version (v10, v1, etc.)
+    const minorVersion = `${versionParts[0]}.${versionParts[1]}`; // Group by minor version (v1.11, v1.10, etc.)
     if (!acc[minorVersion]) acc[minorVersion] = [];
     acc[minorVersion].push(update);
     return acc;
@@ -529,7 +531,8 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
   const minorVersions = Object.keys(groupedUpdates).sort((a, b) => {
     const aParts = a.slice(1).split('.').map(Number);
     const bParts = b.slice(1).split('.').map(Number);
-    return bParts[0] - aParts[0];
+    if (aParts[0] !== bParts[0]) return bParts[0] - aParts[0];
+    return bParts[1] - aParts[1];
   });
 
   useEffect(() => {
@@ -542,7 +545,7 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
   useEffect(() => {
     if (selectedVersion) {
       const versionParts = selectedVersion.split('.');
-      const minorVersion = `${versionParts[0]}`;
+      const minorVersion = `${versionParts[0]}.${versionParts[1]}`;
       setExpandedGroups(prev => ({ ...prev, [minorVersion]: true }));
     }
   }, [selectedVersion]);
@@ -779,7 +782,7 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
                             </h3>
                          </div>
 
-                         {currentUpdate.demo === 'v1010-mesh-gradient' && (
+                         {currentUpdate.demo === 'v1110-mesh-gradient' && (
                            <div className="bg-slate-100 dark:bg-[#0a0a0a] rounded-2xl p-6 md:p-8 border border-black/5 dark:border-white/10 shadow-inner min-h-[300px] flex flex-col items-center justify-center">
                               <DemoMeshGradient />
                            </div>

@@ -50,6 +50,9 @@ export type CardStyle = {
   enableBackground: boolean;
   backgroundType: 'solid' | 'gradient' | 'image' | 'mesh';
   meshColors: string[];
+  meshNoiseEnable: boolean;
+  meshNoiseOpacity: number;
+  meshNoiseSize: number;
   backgroundValue: string;
   // Gradient state for UI controls
   gradientStart: string;
@@ -98,6 +101,9 @@ export type CardStyle = {
   // Card Background (Inner)
   cardBackgroundType: 'solid' | 'gradient' | 'image' | 'mesh';
   cardMeshColors: string[];
+  cardMeshNoiseEnable: boolean;
+  cardMeshNoiseOpacity: number;
+  cardMeshNoiseSize: number;
   cardGradientStart: string;
   cardGradientEnd: string;
   cardGradientAngle: number;
@@ -319,6 +325,9 @@ const INITIAL_CARD_STYLE: CardStyle = {
   backgroundType: 'gradient',
   backgroundValue: 'linear-gradient(135deg, #d4dcdd 0%, #94b1cc 100%)',
   meshColors: ['#ff9a9e', '#fecfef', '#a1c4fd'],
+  meshNoiseEnable: true,
+  meshNoiseOpacity: 0.15,
+  meshNoiseSize: 0.8,
   gradientStart: '#d4dcdd',
   gradientEnd: '#94b1cc',
   gradientAngle: 135,
@@ -363,6 +372,9 @@ const INITIAL_CARD_STYLE: CardStyle = {
   cardGradientAngle: 135,
   cardGradientValue: 'linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%)',
   cardMeshColors: ['#ff9a9e', '#fecfef', '#a1c4fd'],
+  cardMeshNoiseEnable: true,
+  cardMeshNoiseOpacity: 0.15,
+  cardMeshNoiseSize: 0.8,
   cardBackgroundImage: '',
   cardBackgroundConfig: {
     x: 0,
@@ -630,9 +642,23 @@ export const useStore = create<AppState>()(
     {
       name: 'md2card-storage',
       storage: createJSONStorage(() => localStorage),
-      version: 8,
+      version: 9,
       migrate: (persistedState: any, version: number) => {
         if (!persistedState) return persistedState;
+
+        if (version <= 8) {
+          if (persistedState.cardStyle) {
+            persistedState.cardStyle = {
+              ...persistedState.cardStyle,
+              meshNoiseEnable: persistedState.cardStyle.meshNoiseEnable ?? true,
+              meshNoiseOpacity: persistedState.cardStyle.meshNoiseOpacity ?? 0.15,
+              meshNoiseSize: persistedState.cardStyle.meshNoiseSize ?? 0.8,
+              cardMeshNoiseEnable: persistedState.cardStyle.cardMeshNoiseEnable ?? true,
+              cardMeshNoiseOpacity: persistedState.cardStyle.cardMeshNoiseOpacity ?? 0.15,
+              cardMeshNoiseSize: persistedState.cardStyle.cardMeshNoiseSize ?? 0.8,
+            };
+          }
+        }
 
         if (version <= 7) {
           if (persistedState.cardStyle) {
