@@ -22,6 +22,26 @@ export const ChangelogModal = ({ isOpen, onClose }: ChangelogModalProps) => {
   // Update data
   const updates = [
     {
+      version: 'v10.0.3',
+      date: '2026-04-25',
+      title: {
+        en: 'Advanced Heading Customization',
+        zh: '高级标题样式自定义'
+      },
+      changes: {
+        en: [
+          '1. Added advanced customization for markdown headings (H1-H6).',
+          '2. Added independent settings for font family, font size, and color for each heading level.',
+          '3. Updated the state store and i18n configurations to support these new properties.',
+        ],
+        zh: [
+          '1. 新增针对 Markdown 各级标题（H1-H6）的高级样式自定义功能；',
+          '2. 新增对各级标题的字体、字号和颜色的独立设置；',
+          '3. 更新状态存储与多语言配置以支持这些新特性。',
+        ]
+      }
+    },
+    {
       version: 'v10.0.2',
       date: '2026-04-11',
       title: {
